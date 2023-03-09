@@ -96,3 +96,40 @@ LOG_LEVEL=info
 
 The log level option should be provided by an environment variable.
 that environment variable should in turn be based on the mode the app is operating on.
+
+* Testing using vitest
+** resources
+https://vitest.dev/
+https://vitest.dev/guide/
+
+** File structure
+tests/int // integration
+tests/cov // coverage
+tests/units // units
+tests/mock //mocks
+
+
+each subdirectory can be divided into modules
+
+tests/units/{module1,module2}
+
+so that one might do:
+vitest test tests/units/module1/*
+
+
+
+** Configuring vitest
+#+begin_src javascript
+  // through a configuration file
+  PKG_SRCDIR/vitest.config.{js,ts}
+  // through vite configuration file
+  PKG_SRCDIR/vite.config.{js,ts}
+
+  import { defineConfig } from 'vitest/config';
+  export default defineConfig({
+    test: {
+      // ...
+    }
+  })
+
+#+end_src
