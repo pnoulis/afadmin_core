@@ -1,0 +1,98 @@
+* About
+This file acts as a scratch pad towards the development of this repository.
+* TODO Set up the mqtt client
+** TODO the mqtt client needs a logger
+install pino
+** TODO the mqtt client needs to be tested
+** TODO the mqtt client needs some automated way of getting its configuration
+* Logging
+** resources
+https://betterstack.com/community/guides/logging/how-to-install-setup-and-use-pino-to-log-node-js-applications/
+https://github.com/pinojs/pino
+https://getpino.io/#/
+https://getpino.io/#/docs/api?id=options
+** Features
+*** configuring the log event format at instantiation, runtime and invocation time.
+*** configuring the standard log methods through the use of hooks
+*** Redirecting log events to all sorts of channels (stdout, services, streams, files, etc...)
+
+** Formatting the log event object
+Pino allows the customization of the log event object at instantiation, runtime
+and invocation time.
+
+*** Customization options that alter the format of the log event
+#+begin_src javascript
+  {
+    // @param { undefined | string }
+    // if defined log is appended a { name: '' }
+    name: undefined,
+
+    // @param { number }
+    // limit the stringification of the log event
+    depthLimit: 5,
+
+    // @param { function }
+    // @returns { object }
+    // returned object is merged with the log event
+    // must be a pure function
+    // nestedKey and mixinMergeStrategy alter the behavior of the mixin
+    mixin: (_context, level) => undefined,
+
+  }
+#+end_src
+
+*** Instantiation time
+#+begin_src javascript
+  pino({
+    name: the name
+  })
+#+end_src
+
+*** level
+By default pino includes the log level in the log event which is a number.
+#+begin_src javascript
+  // transform the pino log level into its label and then uppercase it.
+  pino({
+    formatters: {
+      level: (label) => {
+        return { level: label.toUpperCase() };
+      },
+    },
+  })
+#+end_src
+*** time
+By default pino includes the time the log event occurred.
+format: Date.now()
+#+begin_src javascript
+  pino({
+    timestamp: pino.stdTimeFunctions.isoTime,
+  })
+#+end_src
+*** Bindings
+**** hostname
+**** pid
+** log levels
+fatar
+error
+warn
+info
+debug
+trace
+** Transporting
+** Configuring the logger
+The log level is used to control which events are logged.
+
+The log level should be an environment variable.
+
+LOG_LEVEL
+
+its value should be defined according to the mode the application is running in.
+
+if on DEV mode
+LOG_LEVEL=trace
+if on PROD mode
+LOG_LEVEL=info
+
+
+The log level option should be provided by an environment variable.
+that environment variable should in turn be based on the mode the app is operating on.
