@@ -1,0 +1,18 @@
+/build*
+/dist*
+/var*
+/coverage*
+/tmp*
+
+# logs
+*.log
+*.logs
+
+# version controll systems
+.git
+.svg
+.hg
+
+# node
+node_modules
+package-lock.json

@@ -1,0 +1,38 @@
+/build*
+/dist*
+/var*
+/coverage*
+/tmp*
+/run*
+
+# XDG user directories
+.config
+.local
+.cache
+
+# logs
+*.log
+*.logs
+
+# environment variables
+.env.*.local
+.env.local
+
+# node
+node_modules
+package-lock.json
+
+# emacs
+# cached changes
+\#*\#
+# undo cache
+*~
+
+# vim
+:w
+
+# vscode
+.vscode
+
+# intellij
+.idea
