@@ -103,22 +103,8 @@ https://vitest.dev/
 https://vitest.dev/guide/
 
 ** File structure
-tests/int // integration
-tests/cov // coverage
-tests/units // units
-tests/mock //mocks
-
-
-each subdirectory can be divided into modules
-
-tests/units/{module1,module2}
-
-so that one might do:
-vitest test tests/units/module1/*
-
-
-
 ** Configuring vitest
+*** How?
 #+begin_src javascript
   // through a configuration file
   PKG_SRCDIR/vitest.config.{js,ts}
@@ -132,4 +118,19 @@ vitest test tests/units/module1/*
     }
   })
 
+#+end_src
+
+*** configuration options
+**** location of tests and filename matching
+#+begin_src javascript
+  const vitestConfig = {
+
+    // @params { []strings }
+    // default: ['**/*.{test,spec}.{js,mjs,cjs,ts,mts,cts,jsx,tsx}']
+    include: [],
+
+    // @params { []strings }
+    // default: ['**/node_modules/**', '**/dist/**', '**/cypress/**']
+    exclude: [],
+    root: '.'
 #+end_src

@@ -3,7 +3,7 @@
 # Make and Shell behavior
 SHELL = /usr/bin/bash
 .DELETE_ON_ERROR:
-.DEFAULT_GOAL = run
+.DEFAULT_GOAL := all
 
 # Programs
 INSTALL = /usr/bin/install
@@ -11,9 +11,10 @@ MKDIRP = /usr/bin/mkdir -p
 CP = /usr/bin/cp
 RM = /usr/bin/rm
 CHMOD = /usr/bin/chmod
-BUILD_SYS = npm exec vite
-LINTER = eslint
-FORMATER = prettier
+BUILD_SYS = npx vite
+LINTER = npx eslint
+FORMATER = npx prettier
+VITEST = npx vitest
 
 .PHONY: all
 all: run
@@ -49,3 +50,11 @@ fmt-check:
 .PHONY: fmt-dry
 fmt-dry:
 	$(FORMATER) .
+
+.PHONY: test
+test:
+	$(VITEST) run
+
+.PHONY: test-watch
+test-watch:
+	$(VITEST) watch
