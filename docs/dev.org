@@ -79,7 +79,22 @@ info
 debug
 trace
 ** Transporting
-** Configuring the logger
+** Pino configuration
+Pino can be configured at:
+
+- Instantiation time
+  Through the pino constructor
+
+  example:
+  pino([options], [destination]) => logger
+
+- Runtime
+  Through pino setters
+
+  example:
+  pino.level = 10;
+
+
 The log level is used to control which events are logged.
 
 The log level should be an environment variable.

@@ -1,6 +1,6 @@
 import pino from "pino";
 
-function Logger() {
+function Logger(config) {
   return "iam a logger";
 }
 

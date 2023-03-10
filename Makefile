@@ -5,6 +5,9 @@ SHELL = /usr/bin/bash
 .DELETE_ON_ERROR:
 .DEFAULT_GOAL := all
 
+# Critical Paths
+LOGDIR=var/log
+
 # Programs
 INSTALL = /usr/bin/install
 MKDIRP = /usr/bin/mkdir -p
@@ -20,12 +23,49 @@ VITEST = npx vitest
 all: run
 
 .PHONY: run
-run:
-	$(BUILD_SYS) serve
+run: dirs
+	NODE_ENV=development $(BUILD_SYS) serve \
+	--mode dev $(params) | tee $(LOGDIR)/app.log
+
+.PHONY: run-staging
+run-stage: dirs
+	NODE_ENV=development $(BUILD_SYS) serve \
+	--mode staging $(params) | tee $(LOGDIR)/app.log
+
+.PHONY: run-prod
+run-prod: dirs
+	NODE_ENV=development $(BUILD_SYS) serve \
+	--mode prod $(params) | tee $(LOGDIR)/app.log
 
 .PHONY: build
 build:
-	$(BUILD_SYS) build
+	NODE_ENV=production $(BUILD_SYS) build \
+	--mode dev $(params)
+
+.PHONY: build-staging
+build-staging:
+	NODE_ENV=production $(BUILD_SYS) build \
+	--mode staging $(params)
+
+.PHONY: build-prod
+build-prod:
+	NODE_ENV=production $(BUILD_SYS) build \
+	--mode prod $(params)
+
+.PHONY: test
+test:
+	NODE_ENV=development $(VITEST) run \
+	--reporter verbose --mode dev $(params)
+
+.PHONY: test-staging
+test-staging:
+	NODE_ENV=development $(VITEST) run \
+	--reporter verbose --mode staging $(params)
+
+.PHONY: test-prod
+test-prod:
+	NODE_ENV=development $(VITEST) run \
+	--reporter verbose --mode prod $(params)
 
 .PHONY: lint
 lint:
@@ -35,10 +75,6 @@ lint:
 lint-check:
 	$(LINTER) --ext js,jsx .
 
-.PHONY: lint-dry
-lint-dry:
-	$(LINTER) --ext js,jsx --fix-dry-run .
-
 .PHONY: fmt
 fmt:
 	$(FORMATER) --write .
@@ -47,14 +83,5 @@ fmt:
 fmt-check:
 	$(FORMATER) --check .
 
-.PHONY: fmt-dry
-fmt-dry:
-	$(FORMATER) .
-
-.PHONY: test
-test:
-	$(VITEST) run
-
-.PHONY: test-watch
-test-watch:
-	$(VITEST) watch
+dirs:
+	$(MKDIRP) $(LOGDIR)
