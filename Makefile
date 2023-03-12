@@ -25,17 +25,17 @@ all: run
 .PHONY: run
 run: dirs
 	NODE_ENV=development $(BUILD_SYS) serve \
-	--mode dev $(params) | tee $(LOGDIR)/app.log
+	--mode dev $(params)
 
 .PHONY: run-staging
 run-stage: dirs
 	NODE_ENV=development $(BUILD_SYS) serve \
-	--mode staging $(params) | tee $(LOGDIR)/app.log
+	--mode staging $(params)
 
 .PHONY: run-prod
 run-prod: dirs
 	NODE_ENV=development $(BUILD_SYS) serve \
-	--mode prod $(params) | tee $(LOGDIR)/app.log
+	--mode prod $(params)
 
 .PHONY: build
 build:

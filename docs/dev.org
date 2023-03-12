@@ -149,3 +149,5 @@ https://vitest.dev/guide/
     exclude: [],
     root: '.'
 #+end_src
+
+* TODO Test the logger
