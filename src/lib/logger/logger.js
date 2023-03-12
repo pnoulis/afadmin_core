@@ -1,14 +1,14 @@
-import pino from "pino";
+import Pino from "pino";
 
 let logger;
 function Logger() {
   if (logger == null) {
-    logger = new pino({
+    logger = new Pino({
       level: `${import.meta.env.VITE_LOG_LEVEL}`,
-      timestamp: pino.stdTimeFunctions.isoTime,
+      timestamp: Pino.stdTimeFunctions.isoTime,
       formatters: {
         bindings: () => ({}),
-        level: (label) => ({level: label.toUpperCase()})
+        level: (label) => ({ level: label.toUpperCase() }),
       },
     });
   }

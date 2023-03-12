@@ -12,6 +12,7 @@
   "rules": {
     "import/prefer-default-export": "off",
     "import/extensions": ["error", "ignorePackages"],
-    "import/no-unresolved": "off"
+    "import/no-unresolved": "off",
+    "import/no-absolute-path": "off"
   }
 }
