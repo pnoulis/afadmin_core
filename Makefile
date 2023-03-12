@@ -25,7 +25,7 @@ all: run
 .PHONY: run
 run: dirs
 	NODE_ENV=development $(BUILD_SYS) serve \
-	--mode dev $(params)
+	--mode development $(params)
 
 .PHONY: run-staging
 run-stage: dirs
@@ -35,12 +35,12 @@ run-stage: dirs
 .PHONY: run-prod
 run-prod: dirs
 	NODE_ENV=development $(BUILD_SYS) serve \
-	--mode prod $(params)
+	--mode production $(params)
 
 .PHONY: build
 build:
 	NODE_ENV=production $(BUILD_SYS) build \
-	--mode dev $(params)
+	--mode development $(params)
 
 .PHONY: build-staging
 build-staging:
@@ -50,12 +50,12 @@ build-staging:
 .PHONY: build-prod
 build-prod:
 	NODE_ENV=production $(BUILD_SYS) build \
-	--mode prod $(params)
+	--mode production $(params)
 
 .PHONY: test
 test:
 	NODE_ENV=development $(VITEST) run \
-	--reporter verbose --mode dev $(params)
+	--reporter verbose --mode development $(params)
 
 .PHONY: test-staging
 test-staging:
@@ -65,7 +65,7 @@ test-staging:
 .PHONY: test-prod
 test-prod:
 	NODE_ENV=development $(VITEST) run \
-	--reporter verbose --mode prod $(params)
+	--reporter verbose --mode production $(params)
 
 .PHONY: lint
 lint:

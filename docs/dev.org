@@ -1,11 +1,12 @@
 * About
 This file acts as a scratch pad towards the development of this repository.
 * TODO Set up the mqtt client
-** TODO the mqtt client needs a logger
+** DONE the mqtt client needs a logger
+CLOSED: [2023-03-12 Sun 13:49]
 install pino
 ** TODO the mqtt client needs to be tested
 ** TODO the mqtt client needs some automated way of getting its configuration
-* Logging
+* Logging using pino
 ** resources
 https://betterstack.com/community/guides/logging/how-to-install-setup-and-use-pino-to-log-node-js-applications/
 https://github.com/pinojs/pino
