@@ -76,12 +76,14 @@ lint-check:
 	$(LINTER) --ext js,jsx .
 
 .PHONY: fmt
+params ?=.
 fmt:
-	$(FORMATER) --write .
+	$(FORMATER) --write $(params)
 
 .PHONY: fmt-check
+params ?=.
 fmt-check:
-	$(FORMATER) --check .
+	$(FORMATER) --check $(params)
 
 dirs:
 	$(MKDIRP) $(LOGDIR)

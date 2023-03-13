@@ -75,7 +75,9 @@ Registry.prototype.canonicalizeTopics = function (...topics) {
  * /mytopic/${param}/go/on
  * is to be replaced by the registered parameter value if any.
  *
- * @param {...string|Array.<...string, object>} topics
+ * @param {string[]} topics
+ *
+ * @throws {Error} Missing parameter
  * @returns {string|string[]}
  */
 Registry.prototype.replaceParams = function (...topics) {

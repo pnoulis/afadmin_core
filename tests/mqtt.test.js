@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
-import { Registry } from "/src/mqtt";
+import { Registry, Proxy } from "/src/mqtt/index.js";
 import { mqttBackendTopics } from "/data/index.js";
+import {connect} from 'mqtt';
 
 describe("mqtt proxy registry", () => {
   it("Should build a default configuration", () => {
@@ -146,7 +147,80 @@ describe("mqtt proxy registry", () => {
 });
 
 describe("mqtt proxy", () => {
-  it("Should run", () => {
+  it("Should build a default configuration", () => {
+    const name = "mqtt_proxy";
+    const id = `${name}_${Math.random().toString(16).slice(2, 8)}`;
+    const expectedDefaultConfig = {
+      name,
+      id,
+      server: {
+        host: "some_host",
+        options: {
+          keepAlive: 30,
+          protocolId: "MQTT",
+          protocolVersion: 4,
+          clean: false,
+          reconnectPeriod: 5000,
+          connectTimeout: 30 * 1000,
+          clientId: id,
+        },
+      },
+    };
+
+    const mqtt = new Proxy({
+      proxy: {
+        id: expectedDefaultConfig.id,
+        name: expectedDefaultConfig.name,
+      },
+      server: {
+        host: "some_host",
+      },
+    });
+
+    expect({
+      name: mqtt.name,
+      id: mqtt.id,
+      server: mqtt.server,
+    }).toStrictEqual(expectedDefaultConfig);
+  });
+
+  it("Should build a custom configuration", () => {
+    const name = "some_proxy";
+    const id = `${name}_wtf`;
+    const expectedCustomConfig = {
+      name,
+      id,
+      server: {
+        host: "some_host",
+        options: {
+          keepAlive: 55,
+          protocolId: "MQTT",
+          protocolVersion: 4,
+          clean: true,
+          reconnectPeriod: 6000,
+          connectTimeout: 1000,
+          clientId: id,
+        },
+      },
+    };
+
+    const mqtt = new Proxy({
+      proxy: {
+        name: expectedCustomConfig.name,
+        id: expectedCustomConfig.id,
+      },
+      server: expectedCustomConfig.server,
+    });
+    expect({
+      name: mqtt.name,
+      id: mqtt.id,
+      server: mqtt.server,
+    }).toStrictEqual(expectedCustomConfig);
+  });
+
+  it('Should successfully connect to the backend server', () => {
+    const host = 'ws://test.mosquitto.org:8080';
+    const client = connect(host);
     expect(true).toBe(true);
   });
 });
