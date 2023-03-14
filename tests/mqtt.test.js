@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { Registry, Proxy } from "/src/mqtt/index.js";
 import { mqttBackendTopics } from "/data/index.js";
-import {connect} from 'mqtt';
+import { connect } from "mqtt";
 
 describe("mqtt proxy registry", () => {
   it("Should build a default configuration", () => {
@@ -218,8 +218,8 @@ describe("mqtt proxy", () => {
     }).toStrictEqual(expectedCustomConfig);
   });
 
-  it('Should successfully connect to the backend server', () => {
-    const host = 'ws://test.mosquitto.org:8080';
+  it("Should successfully connect to the backend server", () => {
+    const host = "ws://test.mosquitto.org:8080";
     const client = connect(host);
     expect(true).toBe(true);
   });

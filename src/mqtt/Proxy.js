@@ -49,8 +49,7 @@ Proxy.prototype.parseConfig = function parseConfig(config) {
   };
 };
 
-Proxy.prototype.start = function() {
-}
+Proxy.prototype.start = function () {};
 
 /**
  * Parse received payload from JSON to JS object
