@@ -13,7 +13,11 @@ States.Idle = function Idle(taskRunner) {
 };
 
 States.Idle.prototype.run = function run(job) {
-  return job(() => this.taskRunner.setState("pending"));
+  return job(() =>
+    this.taskRunner.setState(
+      this.taskRunner.connected() ? "connected" : "pending"
+    )
+  );
 };
 
 States.Pending = function Pending(taskRunner) {
@@ -28,15 +32,16 @@ States.Pending.prototype.init = function init() {
 };
 
 States.Pending.prototype.poll = function poll() {
-  this.intervalID = setInterval(() => {
+  const intervalId = setInterval(() => {
     console.log("polling");
-    if (this.taskRunner.inState("online")) {
-      return clearInterval(this.intervalID);
+    if (this.taskRunner.connected()) {
+      clearInterval(intervalId);
+      return this.taskRunner.setState("connected");
     }
 
     this.taskRunner.flush();
     if (this.taskRunner.jobQueue.length === 0) {
-      clearInterval(this.intervalID);
+      clearInterval(intervalId);
       this.taskRunner.setState("idle");
     }
   }, 1000);
@@ -46,58 +51,55 @@ States.Pending.prototype.run = function run(job) {
   return job();
 };
 
-States.Online = function Online(taskRunner) {
-  this.name = "online";
+States.Connected = function Connected(taskRunner) {
+  this.name = "connected";
   this.taskRunner = taskRunner;
   this.getState = () => this;
 };
 
-States.Online.prototype.init = function init() {
-  this.runJobs();
-};
-
-States.Online.prototype.runJobs = async function runJobs() {
+States.Connected.prototype.init = function init() {
   this.taskRunner.flush();
-  if (this.taskRunner.jobQueue.length === 0) {
-    return this.taskRunner.setState(this.taskRunner.states.idle.getState());
-  }
-
-  if (!this.taskRunner.inState("online")) {
-    return this.taskRunner.setState("pending");
-  }
-
-  for (const job of this.taskRunner.jobQueue) {
-    if (!this.taskRunner.inState("online")) {
-      break;
-    }
-    await job.exec().then(() => {
-      job.done = true;
-    });
-  }
-
   this.runJobs();
 };
 
-States.Online.prototype.run = function run(job) {
-  return job();
+States.Connected.prototype.runJobs = function runJobs() {
+  if (this.taskRunner.jobQueue.length === 0) {
+    this.taskRunner.setState("idle");
+  } else if (!this.taskRunner.connected()) {
+    this.taskRunner.setState("pending");
+  } else {
+    this.taskRunner.jobQueue.shift()();
+    this.runJobs();
+  }
 };
 
-function TaskRunner(config = {}) {
-  const conf = this.parseConfig(config);
+States.Connected.prototype.run = function run(job) {
+  return job(() => this.runJobs());
+};
+
+function TaskRunner(userConf = {}) {
+  const conf = this.parseConf(userConf);
   this.timeout = conf.timeout;
+  this.connected = conf.connected;
   this.jobQueue = [];
   this.state = null;
   this.states = {
     idle: new States.Idle(this),
     pending: new States.Pending(this),
-    online: new States.Online(this),
+    connected: new States.Connected(this),
   };
   this.setState("idle");
 }
 
-TaskRunner.prototype.parseConfig = function parseConfig(config) {
+TaskRunner.prototype.parseConf = function parseConf(userConf) {
+  const defaultConf = {
+    timeout: 3000,
+    connected: () => false,
+  };
+
   return {
-    timeout: config.timeout || 3000,
+    ...defaultConf,
+    ...userConf,
   };
 };
 
@@ -121,7 +123,7 @@ TaskRunner.prototype.queue = function (job) {
 TaskRunner.prototype.flush = function () {
   const now = Date.now();
   this.jobQueue = this.jobQueue.filter((job) => {
-    if (now > job.timeout) {
+    if (now >= job.timeout) {
       job.exec(true); // job expired
     }
     return now < job.timeout;
@@ -135,12 +137,13 @@ TaskRunner.prototype.newJob = function (task, options) {
         timeout: Date.now() + (options.timeout || this.timeout),
         exec: (expired) => {
           if (expired) {
-            return reject(new TaskRunnerError("Task timeout"));
-          }
-          try {
-            task().then(resolve, reject);
-          } catch (err) {
-            reject(new TaskRunnerError("Task not a promise"));
+            reject(new TaskRunnerError("Task timeout"));
+          } else {
+            try {
+              task().then(resolve, reject);
+            } catch (err) {
+              reject(new TaskRunnerError("Task not a promise"));
+            }
           }
         },
       });
@@ -149,7 +152,7 @@ TaskRunner.prototype.newJob = function (task, options) {
 };
 
 TaskRunner.prototype.inState = function (state) {
-  return this.state.name === state;
+  return state === this.state.name;
 };
 
 TaskRunner.prototype.run = function (task, options = {}) {

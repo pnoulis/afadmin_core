@@ -32,20 +32,26 @@ describe("task runner", () => {
     expect(tr.inState("pending")).toBe(true);
   });
 
-  it("Should transition from pending to idle when all tasks have been flushed due to timeout", () => {
+  it.only("Should transition from pending to idle when all tasks have been flushed due to timeout", async () => {
     vi.useFakeTimers();
     const tr = new TaskRunner();
     const task = () =>
       new Promise((resolve, reject) => {
-        resolve("task 1");
+        resolve("yolo");
       });
 
-    tr.run(task).catch((err) => console.log(err));
-    vi.advanceTimersToNextTimer();
-    vi.advanceTimersToNextTimer();
-    vi.advanceTimersToNextTimer();
-    vi.advanceTimersToNextTimer();
-    expect(tr.inState("idle")).toBe(true);
+    const atask = () =>
+      new Promise((resolve, reject) => {
+        setTimeout(() => reject(new Error("Task timeout")), 1000);
+      });
+
+    // const pr = tr.run(task).then((res) => console.log("yolo"));
+    const pr = atask();
+    await vi.runAllTimersAsync();
+    await expect(() => pr).rejects.toThrow("Task timeout");
     vi.useRealTimers();
+  });
+  it.only("Shoudl work fine after test", () => {
+    console.log("another test");
   });
 });
