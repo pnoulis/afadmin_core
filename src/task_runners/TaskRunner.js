@@ -1,6 +1,78 @@
+/*
+  ------------------------------ TaskRunner ------------------------------
+
+  This program is an implementation of the lazy initialization pattern.
+
+  The lazy initialization pattern is intended to make developing asynchronous
+  applications easier by a sort of fire and forget method.
+
+  Example not utilizing the lazy initialization pattern:
+  Say that a web server has to fetch some data from a database.
+
+  const db = {
+  get();
+  }
+
+  The developer must initialize the connection usually like this:
+
+  db.connect();
+
+  Only when the database is connected can the developer fetch the desired data.
+
+  Usually:
+
+  db.connect().then(() => db.get(all_users));
+
+  or:
+
+  db.on('connect', () => db.get(all_users));
+
+  This way the fetching of data must be chained. It leads to complex and weak
+  code.
+
+  Example using the TaskRunner:
+
+  const db = { get() };
+  db.connect();
+
+  const tr = new TaskRunner({
+  isConnected: () => db.connected
+  })
+
+  tr.run(() => db.get(all_users)).then((res) => console.log(res))
+  .catch(err => console.log(timeout error));
+
+  ERRORS:
+  TaskRunnerError -> msg: Task timeout
+  TaskRunnerError -> msg: Task not a promise
+  TaskRunnerError -> msg: Unrecognized state ${state}
+
+  LOGGING:
+  logger.debug(...args);
+
+  CONFIGURATION:
+  {
+  // The amount of time to wait before the scheduled task is considered expired
+  timeout: 3000,
+
+  // The frequency by which to poll the service of its connection status
+  pollFrequency: 1000,
+
+  // The function that checks the service's connection status
+  isConnected: () => false,
+
+  // logger
+  logger: { debug(...args) }
+  }
+ */
+
+let LOGGER = {
+  debug: (...args) => console.log(...args),
+};
+
 class TaskRunnerError extends Error {
-  constructor(message) {
-    super(message);
+  constructor(message, cause) {
+    super(message, { cause });
     this.name = this.constructor.name;
   }
 }
@@ -15,7 +87,7 @@ States.Idle = function Idle(taskRunner) {
 States.Idle.prototype.run = function run(job) {
   return job(() =>
     this.taskRunner.setState(
-      this.taskRunner.connected() ? "connected" : "pending"
+      this.taskRunner.isConnected() ? "connected" : "pending"
     )
   );
 };
@@ -27,14 +99,13 @@ States.Pending = function Pending(taskRunner) {
 };
 
 States.Pending.prototype.init = function init() {
-  console.log("pending state init");
   this.poll();
 };
 
 States.Pending.prototype.poll = function poll() {
   const intervalId = setInterval(() => {
-    console.log("polling");
-    if (this.taskRunner.connected()) {
+    LOGGER.debug("polling");
+    if (this.taskRunner.isConnected()) {
       clearInterval(intervalId);
       return this.taskRunner.setState("connected");
     }
@@ -44,7 +115,7 @@ States.Pending.prototype.poll = function poll() {
       clearInterval(intervalId);
       this.taskRunner.setState("idle");
     }
-  }, 1000);
+  }, this.taskRunner.pollFrequency);
 };
 
 States.Pending.prototype.run = function run(job) {
@@ -58,17 +129,19 @@ States.Connected = function Connected(taskRunner) {
 };
 
 States.Connected.prototype.init = function init() {
+  LOGGER.debug("service connected");
   this.taskRunner.flush();
   this.runJobs();
 };
 
 States.Connected.prototype.runJobs = function runJobs() {
+  LOGGER.debug(`Jobs to run: ${this.taskRunner.jobQueue.length}`);
   if (this.taskRunner.jobQueue.length === 0) {
     this.taskRunner.setState("idle");
-  } else if (!this.taskRunner.connected()) {
+  } else if (!this.taskRunner.isConnected()) {
     this.taskRunner.setState("pending");
   } else {
-    this.taskRunner.jobQueue.shift()();
+    this.taskRunner.jobQueue.shift().exec();
     this.runJobs();
   }
 };
@@ -80,7 +153,8 @@ States.Connected.prototype.run = function run(job) {
 function TaskRunner(userConf = {}) {
   const conf = this.parseConf(userConf);
   this.timeout = conf.timeout;
-  this.connected = conf.connected;
+  this.isConnected = conf.isConnected;
+  this.pollFrequency = conf.pollFrequency;
   this.jobQueue = [];
   this.state = null;
   this.states = {
@@ -92,9 +166,13 @@ function TaskRunner(userConf = {}) {
 }
 
 TaskRunner.prototype.parseConf = function parseConf(userConf) {
+  if (userConf.logger) {
+    LOGGER = userConf.logger;
+  }
   const defaultConf = {
     timeout: 3000,
-    connected: () => false,
+    isConnected: () => false,
+    pollFrequency: 1000,
   };
 
   return {
@@ -106,9 +184,9 @@ TaskRunner.prototype.parseConf = function parseConf(userConf) {
 TaskRunner.prototype.setState = function (state) {
   const oldState = `[TRANSITION]:taskRunner ${this.state?.name}`;
   this.state = this.states[state];
-  console.log(`${oldState} -> ${this.state.name}`);
+  LOGGER.debug(`${oldState} -> ${this.state.name}`);
   if (!this.state) {
-    throw new TaskRunnerError(`Unrecognized state ${state}`);
+    throw new TaskRunnerError(`Unrecognized state: ${state}`);
   }
 
   if ("init" in this.state) {
@@ -142,12 +220,13 @@ TaskRunner.prototype.newJob = function (task, options) {
             try {
               task().then(resolve, reject);
             } catch (err) {
-              reject(new TaskRunnerError("Task not a promise"));
+              reject(new TaskRunnerError("Synchronous error", err));
             }
           }
         },
       });
-      cb();
+      LOGGER.debug(`new job scheduled: ${this.jobQueue.length}`);
+      cb && cb();
     });
 };
 
