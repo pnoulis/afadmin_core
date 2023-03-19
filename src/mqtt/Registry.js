@@ -1,3 +1,31 @@
+/*
+  ------------------------------ Mqtt Registry ------------------------------
+
+  This program is a component part of the Mqtt Proxy. It is used as a registry
+  of routes.
+
+  A route is not strictly a topic. Each route corresponds to 1 or 2 topics. Both of these
+  topics represent a transaction between a backend server and a client.
+  Why use the concept of a route and not topics?
+  Because a route allows the server to send its response to a different topic that then one
+  it received the messages. Therefore a route is an abstraction over topics. The route
+  represents a complete response-request cycle.
+
+  Each route is made up of 3 parts.
+
+  1. Alias
+  2. Publishing topic
+  3. Subscription topic
+
+  Alias:
+  Aliases make it easier to refer to the route's topics which may be long.
+  Not only that but aliases allow us to refer to 2 topics as one.
+ */
+
+let LOGGER = {
+  debug: (...args) => console.log(...args),
+};
+
 class MqttRegistryError extends Error {
   constructor(message, cause) {
     super(message, { cause });
@@ -10,34 +38,33 @@ function Registry(userConf = {}) {
   this.strict = conf.strict;
   this.paramSyntax = conf.paramSyntax;
   this.params = conf.params;
-  this.routes = conf.routes;
+  this.routes = new Map();
+  conf.routes.forEach((route) => this.setRoute(route));
 }
 
 Registry.prototype.parseConf = function parseConf(userConf) {
-  return {
-    strict: userConf.strict ?? true,
-    params: new Map(Object.entries(userConf.params || {})),
-    paramSyntax: userConf.paramSyntax || "${[a-zA-Z]+}",
-    routes: new Map(
-      userConf.routes
-        ? userConf.routes.map((route) => {
-            const [alias, pub, sub] = this.canonicalizeTopics(
-              route.alias,
-              route.pub,
-              route.sub
-            );
-            return [alias, { pub, sub }];
-          })
-        : []
-    ),
-  };
+  if (userConf.logger) {
+    LOGGER = userConf.logger;
+  }
+  const conf = {};
+  conf.strict = userConf.strict ?? true;
+  conf.params = new Map(Object.entries(userConf.params || {}));
+  conf.paramSyntax = new RegExp(userConf.paramSyntax || "\\${([a-zA-Z]+)}");
+  conf.routes = userConf.routes || [];
+  return conf;
 };
 
-Registry.prototype.setRoute = function (route) {
-  if (
-    !Object.values(route).every((v) => typeof v === "string" && v.length > 1)
-  ) {
-    throw new MqttRegistryError(`Invalid input: ${route}`);
+/**
+ * @param {Object} route
+ * @param {String} route.alias - The key to the route's pub and sub topics
+ * @param {String} route.pub - The route's publishing topic
+ * @param {String} route.sub - The route's subscription topic
+ * @returns {Map} route - The route
+ * @throws {MqttRegistryError} Invalid route alias: <route.alias>
+ **/
+Registry.prototype.setRoute = function setRoute(route) {
+  if (typeof route.alias !== "string" || route.alias.length < 1) {
+    throw new MqttRegistryError(`Invalid route alias: ${route.alias}`);
   }
   const [alias, pub, sub] = this.canonicalizeTopics(
     route.alias,
@@ -47,32 +74,44 @@ Registry.prototype.setRoute = function (route) {
   return this.routes.set(alias, { pub, sub });
 };
 
-Registry.prototype.getRoute = function (alias) {
-  return this.routes.get(alias);
+/**
+ * @returns {Object | undefined} route
+ * Where the return object is: { alias, pub, sub }
+ **/
+Registry.prototype.getRoute = function getRoute(alias) {
+  // this performs no alias resultion and does not
+  // throw any error if if ther route does not exist
+  const route = this.routes.get(alias);
+  return route
+    ? {
+        alias,
+        ...route,
+      }
+    : undefined;
 };
 
-Registry.prototype.setParam = function ({ key, value }) {
-  // TODO perform input validation
+/**
+ * @param {string} key - Should confrom to Registry.paramSyntax
+ * @param {string} value
+ * @returns {string} value
+ **/
+Registry.prototype.setParam = function setParam(key, value) {
+  if (!this.paramSyntax.test(key)) {
+    throw new MqttRegistryError(
+      `Parameter key: ${key} does not conform to syntax: ${this.paramSyntax.toString()}`
+    );
+  } else if (typeof value !== "string") {
+    throw new MqttRegistryError(`Parameter value: ${value} must be a string`);
+  }
   return this.params.set(key, value);
 };
 
-Registry.prototype.getParam = function (key) {
+/**
+ * @param {string} key - Paremeter key
+ * @returns {Object | undefined} param
+ **/
+Registry.prototype.getParam = function getParam(key) {
   return this.params.get(key);
-};
-
-Registry.prototype.getTopic = function (topic) {
-  const alias = Array.from(this.registry.keys()).find(
-    (el) => el === this.canonicalizeTopics(topic)
-  );
-  if (!alias) return null;
-  return {
-    alias,
-    ...this.registry.get(alias),
-  };
-};
-
-Registry.prototype.addParam = function (key, value) {
-  this.params[key] = value;
 };
 
 /**
@@ -81,14 +120,18 @@ Registry.prototype.addParam = function (key, value) {
  * @param {string[]} topics
  * @returns {string|string[]}
  */
-Registry.prototype.canonicalizeTopics = (...topics) =>
-  topics.map((topic, i) => {
+Registry.prototype.canonicalizeTopics = function canonicalizeTopics(...topics) {
+  return topics.map((topic, i) => {
+    if (topic == null) {
+      return topic;
+    }
     topic = topic.replace(/\/{2,}/g, "/");
     if (!topic.startsWith("/")) topic = "/" + topic;
     if (topic.endsWith("/")) topic = topic.slice(0, -1);
     topic = topic.replace(/\s/g, "");
     return topic;
   });
+};
 
 /**
  * Replace possible parameters within a topic if any match
@@ -103,45 +146,19 @@ Registry.prototype.canonicalizeTopics = (...topics) =>
  * @throws {Error} Missing parameter
  * @returns {string|string[]}
  */
-Registry.prototype.replaceParams = (...topics) =>
-  topics.map((topic, i) =>
-    topic.replace(/\${([a-z]*)}/gi, (match, param) => {
+Registry.prototype.replaceParams = function replaceParams(...topics) {
+  return topics.map((topic, i) =>
+    topic.replace(/\${([a-z]+)}/gi, (match, param) => {
       const value = this.getParam(param);
       if (!value) {
         throw new MqttRegistryError(
           `Missing parameter: ${param} for topic: ${topic}`
         );
-        return value;
       }
+      return value;
     })
   );
-// Registry.prototype.replaceParams = function (...topics) {
-//   const replaced = topics.map((topic, i) => topic.replace(/\${([a-z]*)}/gi, (match, param) => {
-//     param = this.getParam(param);
-//     if (!param) {
-//       throw new MqttRegistryError(
-//         `Missing parameter: ${match} for topic: ${topic}`
-//       );
-//     }
-//     return param;
-//   }))
-//   // topics = topics.map((topic, i) => {
-//   //   if (topic == null) {
-//   //     return null;
-//   //   }
-//   //   topic = topic.replace(/\${([a-z]*)}/gi, (match, param) => {
-//   //     param = this.params[param];
-//   //     if (!param) {
-//   //       throw new MqttRegistryError(
-//   //         `Missing parameter: ${match} for topic: ${topic}`
-//   //       );
-//   //     }
-//   //     return param;
-//   //   });
-//   //   return topic;
-//   // });
-//   return replaced.length > 1 ? replaced : replaced.pop();
-// };
+};
 
 /**
  * Resolve a topic alias. A topic alias is 'resolved' to
@@ -161,13 +178,13 @@ Registry.prototype.replaceParams = (...topics) =>
  * @throws {Error} Unregistered topic alias
  * @returns {string[]}
  */
-Registry.prototype.resolve = function resolve(alias) {
-  const topic = this.canonicalizeTopics(alias);
-  if (!this.registry.has(topic) && this.strict) {
-    throw new MqttRegistryErorr(`Unregistered topic alias: ${topic}`);
+Registry.prototype.resolve = function resolve(route) {
+  const [alias] = this.canonicalizeTopics(route);
+  if (!this.routes.has(alias) && this.strict) {
+    throw new MqttRegistryError(`Unregistered route alias: ${alias}`);
   }
-  const { pub, sub } = this.registry.get(topic) || { pub: topic, sub: topic };
-  return [topic, ...this.replaceParams(pub, sub)];
+  const { pub, sub } = this.routes.get(alias) || { pub: alias, sub: alias };
+  return [alias, ...this.replaceParams(pub, sub)];
 };
 
 export { Registry };

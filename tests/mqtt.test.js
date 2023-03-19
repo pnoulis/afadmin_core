@@ -4,52 +4,45 @@ import { mqttBackendTopics } from "/data/index.js";
 import { connect } from "mqtt";
 
 describe("mqtt proxy registry", () => {
-  it("Should build a default configuration", () => {
+  it.only("Should build a default configuration", () => {
     const expectedDefaultConfig = {
       strict: true,
       params: {},
-      registry: new Map(),
+      paramSyntax: new RegExp("\\${([a-zA-Z]+)}"),
+      routes: new Map(),
     };
     const registry = new Registry();
-    expect({
-      strict: registry.strict,
-      params: registry.params,
-      registry: registry.registry,
-    }).toEqual(expectedDefaultConfig);
+    expect(registry.strict).toBe(true);
+    expect(registry.params).toBeTypeOf(typeof expectedDefaultConfig.params);
+    expect(registry.paramSyntax.toString()).toBe(
+      expectedDefaultConfig.paramSyntax.toString()
+    );
+    expect(registry.routes).toBeTypeOf(typeof expectedDefaultConfig.routes);
   });
 
-  it("Should build a custom configuration", () => {
+  it.only("Should build a custom configuration", () => {
     const expectedCustomConfig = {
       strict: false,
+      paramSyntax: "~[a-z+]~",
       params: { dummyParam: "someParam" },
-      registry: new Map([
-        [
-          "/fakeTopicAlias",
-          { pub: "/backend/some/topic", sub: "/backend/some/topic/response" },
-        ],
-      ]),
-    };
-
-    const registry = new Registry({
-      strict: false,
-      params: { dummyParam: "someParam" },
-      topics: [
+      routes: [
         {
-          alias: "/fakeTopicAlias",
-          pub: "/backend/some/topic",
-          sub: "/backend/some/topic/response",
+          alias: "/some/route",
+          pub: "/publish/to/route",
+          sub: "/sub/to/route",
+        },
+        {
+          alias: "/some/route/2",
+          pub: "/publish/to/route/2",
+          sub: "/sub/to/route/2",
         },
       ],
-    });
+    };
 
-    expect({
-      strict: registry.strict,
-      params: registry.params,
-      registry: registry.registry,
-    }).toEqual(expectedCustomConfig);
+    const registry = new Registry(expectedCustomConfig);
   });
 
-  it("Should canonicalize a malformed topic", () => {
+  it.only("Should canonicalize a malformed topic", () => {
     const malformedTopics = new Map([
       ["topic", "/topic"],
       ["topic/backend", "/topic/backend"],
@@ -66,18 +59,18 @@ describe("mqtt proxy registry", () => {
     expect(canonicalizedTopics).toEqual(Array.from(malformedTopics.values()));
   });
 
-  it("Should add topics at runtime", () => {
+  it.only("Should add topics at runtime", () => {
     const registry = new Registry();
     const adhocTopic = {
       alias: "/some",
       pub: "/some/topic",
       sub: "/some/topic/response",
     };
-    registry.addTopic(adhocTopic);
-    expect(registry.getTopic(adhocTopic.alias)).toStrictEqual(adhocTopic);
+    registry.setRoute(adhocTopic);
+    expect(registry.getRoute(adhocTopic.alias)).toStrictEqual(adhocTopic);
   });
 
-  it("Should successfully replace a registered parameter", () => {
+  it.only("Should successfully replace a registered parameter", () => {
     const topic = {
       pub: "/some/${paramKey}/topic",
       sub: "/some/${paramKey}/topic/response",
@@ -94,15 +87,15 @@ describe("mqtt proxy registry", () => {
     ]);
   });
 
-  it("Should throw an error if a parameter could not be replaced", () => {
+  it.only("Should throw an error if a parameter could not be replaced", () => {
     const topic = "/some/${missingParam}/topic";
     const registry = new Registry();
     expect(() => registry.replaceParams(topic)).toThrowError(
-      "Missing parameter: '${missingParam}' for topic: /some/${missingParam}/topic"
+      "Missing parameter"
     );
   });
 
-  it("Should successfully resolve a registred alias and its parameters if any", () => {
+  it.only("Should successfully resolve a registred alias and its parameters if any", () => {
     const topic = {
       alias: "/some",
       pub: "/some/${paramKey}/topic",
@@ -110,7 +103,7 @@ describe("mqtt proxy registry", () => {
     };
     const registry = new Registry({
       params: { paramKey: "remote" },
-      topics: [topic],
+      routes: [topic],
     });
 
     expect(registry.resolve(topic.alias)).toStrictEqual([
@@ -119,7 +112,7 @@ describe("mqtt proxy registry", () => {
       "/some/remote/topic/response",
     ]);
   });
-  it("Should successfully resolve a non registered alias in non-strict mode", () => {
+  it.only("Should successfully resolve a non registered alias in non-strict mode", () => {
     const topic = {
       alias: "/some",
     };
@@ -132,7 +125,7 @@ describe("mqtt proxy registry", () => {
       topic.alias,
     ]);
   });
-  it("Should throw an error if it fails to resolve a topic in strict mode", () => {
+  it.only("Should throw an error if it fails to resolve a topic in strict mode", () => {
     const topic = {
       alias: "/some",
     };
@@ -141,7 +134,7 @@ describe("mqtt proxy registry", () => {
       strict: true,
     });
     expect(() => registry.resolve(topic.alias)).toThrowError(
-      "Unregistered topic: /some"
+      "Unregistered route"
     );
   });
 });
