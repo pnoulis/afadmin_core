@@ -96,11 +96,7 @@ Registry.prototype.getRoute = function getRoute(alias) {
  * @returns {string} value
  **/
 Registry.prototype.setParam = function setParam(key, value) {
-  if (!this.paramSyntax.test(key)) {
-    throw new MqttRegistryError(
-      `Parameter key: ${key} does not conform to syntax: ${this.paramSyntax.toString()}`
-    );
-  } else if (typeof value !== "string") {
+  if (typeof value !== "string") {
     throw new MqttRegistryError(`Parameter value: ${value} must be a string`);
   }
   return this.params.set(key, value);

@@ -157,7 +157,7 @@ Proxy.prototype._subscribe = function (sub) {
  * @param {Object} payload - Data to send
  * @returns {Promise}
  **/
-Proxy.prototype.publish = async function (route, payload) {
+Proxy.prototype.publish = async function (route, payload = {}, options = {}) {
   return new Promise((resolve, reject) => {
     let alias, pub, sub;
     let client;
@@ -166,7 +166,7 @@ Proxy.prototype.publish = async function (route, payload) {
       if (!this.subscriptions.has(sub)) {
         this._subscribe(sub);
       }
-      client = this.registerClient(sub, { transient: true }, (err, msg) => {
+      client = this.registerClient(sub, options, (err, msg) => {
         if (err) {
           reject(err);
         } else {
@@ -175,10 +175,11 @@ Proxy.prototype.publish = async function (route, payload) {
       });
       const encoded = this.encode(payload);
       this._publish(pub, encoded, client);
+      client.transient && this.unregisterClient(sub, client.id);
     } catch (err) {
       let error = err;
       if (!(err instanceof MqttProxyError)) {
-        error = new MqttProxyError('Unknown error', err);
+        error = new MqttProxyError("Unknown error", err);
       }
       LOGGER.debug(error);
       reject(error);
@@ -195,10 +196,11 @@ Proxy.prototype.publish = async function (route, payload) {
 Proxy.prototype._publish = function _publish(pub, payload, client) {
   this.server.publish(pub, payload, (err) => {
     if (err) {
-      LOGGER.debug('Unknown error', err);
+      LOGGER.debug("Unknown error", err);
       client.cb(new MqttProxyError("Unknown error", err));
     } else {
       LOGGER.debug(`Successfully published at topic: ${pub}`);
+      client.transient && client.cb(null);
     }
   });
 };
