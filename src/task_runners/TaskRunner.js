@@ -1,3 +1,4 @@
+import { promisify } from "node:util";
 /*
   ------------------------------ TaskRunner ------------------------------
 
@@ -218,7 +219,12 @@ TaskRunner.prototype.newJob = function (task, options) {
             reject(new TaskRunnerError("Task timeout"));
           } else {
             try {
-              task().then(resolve, reject);
+              task = task();
+              if (!(task instanceof Promise)) {
+                task();
+              } else {
+                task.then(resolve, reject);
+              }
             } catch (err) {
               reject(new TaskRunnerError("Synchronous error", err));
             }
