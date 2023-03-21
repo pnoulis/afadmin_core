@@ -153,3 +153,23 @@ https://vitest.dev/guide/
 
 * TODO Test the logger
 * Mqtt client refactoring
+** mqtt publish needs to take into account req-res modes
+A server publishes a message in a fire and forget fashion.
+While a client publishes a message and might need to.
+
+mode: 'ff',
+type: 'response',
+type: 'persistent'
+* Agent factory machine
+Has teams
+Each team has a roster.
+A roster is made up of players.
+Each player is assigned a wristband.
+** DONE Create team
+CLOSED: [2023-03-20 Mon 23:13]
+** DONE Remove team
+CLOSED: [2023-03-20 Mon 23:13]
+
+** TODO create player
+** TODO register player
+** TODO login player
