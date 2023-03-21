@@ -153,7 +153,8 @@ https://vitest.dev/guide/
 
 * TODO Test the logger
 * Mqtt client refactoring
-** mqtt publish needs to take into account req-res modes
+** DONE mqtt publish needs to take into account req-res modes
+CLOSED: [2023-03-21 Tue 12:43]
 A server publishes a message in a fire and forget fashion.
 While a client publishes a message and might need to.
 
@@ -173,3 +174,14 @@ CLOSED: [2023-03-20 Mon 23:13]
 ** TODO create player
 ** TODO register player
 ** TODO login player
+* Environment variables
+** backend variables
+BACKEND_AUTH_USERNAME=
+BACKEND_AUTH_PASSWORD=
+VITE_BACKEND_PREFIX
+VITE_BACKEND_LOGLEVEL
+BACKEND_PROTOCOL=
+BACKEND_HOST=
+BACKEND_PORT=
+VITE_BACKEND_URL=${BACKEND_PROTOCOL}://${BACKEND_AUTH_USERNAME}:${BACKEND_AUTH_PASSWORD}@${BACKEND_HOST}:${BACKEND_PORT}
+VITE_BACKEND_CLIENT_ID=

@@ -14,7 +14,6 @@ class MqttProxyError extends Error {
 
 function Proxy(userConf = {}) {
   const conf = this.parseConf(userConf);
-  this.name = conf.name;
   this.id = conf.id;
   this.server = conf.server;
   this.transactionMode = conf.transactionMode;
@@ -28,8 +27,8 @@ Proxy.prototype.parseConf = function parseConf(userConf) {
     LOGGER = userConf.logger;
   }
   const conf = {};
-  conf.name = userConf.proxy?.name || "mqtt_proxy";
-  conf.id = `${conf.name}_${Math.random().toString(16).slice(2, 8)}`;
+  conf.id =
+    userConf.id || `mqtt_proxy:${Math.random().toString(16).slice(2, 8)}`;
   conf.registry = userConf.registry || {};
   conf.registry.logger = LOGGER;
   /*

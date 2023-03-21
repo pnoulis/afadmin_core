@@ -14,6 +14,7 @@ const tr = new TaskRunner({
   isConnected: () => booted,
 });
 const client = new Proxy({
+  name: "afm",
   registry: {
     params: { clientId: CLIENT_ID },
     routes: BACKEND_TOPICS,

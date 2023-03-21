@@ -1,9 +1,9 @@
 import { TeamsManager } from "./team.js";
-import { backend } from "./backend.js";
 
 class AgentFactoryMachine {
-  constructor() {
+  constructor(services) {
     this.teams = new TeamsManager(this);
+    this.services = services;
   }
 }
 

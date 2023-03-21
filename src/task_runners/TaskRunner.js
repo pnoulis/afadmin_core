@@ -211,25 +211,37 @@ TaskRunner.prototype.flush = function () {
 TaskRunner.prototype.newJob = function (task, options) {
   return (cb) =>
     new Promise((resolve, reject) => {
-      this.queue({
-        timeout: Date.now() + (options.timeout || this.timeout),
-        exec: (expired) => {
-          if (expired) {
-            reject(new TaskRunnerError("Task timeout"));
-          } else {
-            try {
-              task = task();
-              if (!(task instanceof Promise)) {
+      if (options.cb) {
+        this.queue({
+          timeout: Date.now() + (options.timeout || this.timeout),
+          exec: (expired) => {
+            if (expired) {
+              task(new TaskRunnerError("Task timeout"));
+            } else {
+              try {
                 task();
-              } else {
-                task.then(resolve, reject);
+              } catch (err) {
+                task(new TaskRunnerError("Synchronous error", err));
               }
-            } catch (err) {
-              reject(new TaskRunnerError("Synchronous error", err));
             }
-          }
-        },
-      });
+          },
+        });
+      } else {
+        this.queue({
+          timeout: Date.now() + (options.timeout || this.timeout),
+          exec: (expired) => {
+            if (expired) {
+              reject(new TaskRunnerError("Task timeout"));
+            } else {
+              try {
+                task().then(resolve, reject);
+              } catch (err) {
+                reject(new TaskRunnerError("Synchronous error", err));
+              }
+            }
+          },
+        });
+      }
       LOGGER.debug(`new job scheduled: ${this.jobQueue.length}`);
       cb && cb();
     });
@@ -239,7 +251,11 @@ TaskRunner.prototype.inState = function (state) {
   return state === this.state.name;
 };
 
-TaskRunner.prototype.run = function (task, options = {}) {
+TaskRunner.prototype.run = function (options, task) {
+  if (typeof options === "function") {
+    task = options;
+    options = {};
+  }
   return this.state.run(this.newJob(task, options));
 };
 
