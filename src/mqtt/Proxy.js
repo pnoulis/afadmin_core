@@ -20,13 +20,7 @@ function Proxy(userConf = {}) {
   this.transactionMode = conf.transactionMode;
   this.registry = new Registry(conf.registry);
   this.subscriptions = new Map();
-
-  this.server.on("message", (topic, message) => {
-    if (!this.subscriptions.has(topic)) {
-      return;
-    }
-    this.notifyClients(topic, message);
-  });
+  this.server.on("message", this.notifyClients.bind(this));
 }
 
 Proxy.prototype.parseConf = function parseConf(userConf) {
@@ -62,9 +56,9 @@ Proxy.prototype.parseConf = function parseConf(userConf) {
  * @returns {Object}
  * @throws {MqttProxyError} - Failed to decode message
  **/
-Proxy.prototype.decode = function decode(msg) {
+Proxy.prototype.decode = function decode(msg = "") {
   try {
-    return JSON.parse(msg.toString());
+    return JSON.parse(msg.toString()) || {};
   } catch (err) {
     throw new MqttProxyError("Failed to decode message", msg.toString());
   }
@@ -75,7 +69,7 @@ Proxy.prototype.decode = function decode(msg) {
  * @returns {string} - stringified JSON
  * @throws {MqttProxyError}
  **/
-Proxy.prototype.encode = function encode(msg) {
+Proxy.prototype.encode = function encode(msg = "") {
   try {
     return JSON.stringify(msg);
   } catch (err) {
@@ -254,27 +248,26 @@ Proxy.prototype._publish = function _publish(pub, payload, cb) {
  * as transmitted by the server or an error which signals the subscription could
  * not be established
  **/
-Proxy.prototype.notifyClients = function notifyClients(sub, message) {
-  let error = null;
-  let decoded;
+Proxy.prototype.notifyClients = function notifyClients(sub, msg) {
+  const clients = this.subscriptions.get(sub);
+  if (clients.length === 0) {
+    return;
+  }
 
-  if (message instanceof Error) {
-    error = message;
+  let error = null;
+  let decoded = null;
+  if (msg instanceof Error) {
+    error = msg;
   } else {
     try {
-      decoded = this.decode(message);
+      decoded = this.decode(msg);
     } catch (err) {
       error = err;
     }
   }
-
-  LOGGER.debug(`message arrived for subscription: ${sub}`);
-  if (error) {
-    LOGGER.debug(error);
-  }
   this.subscriptions.set(
     sub,
-    this.subscriptions.get(sub).filter((client) => {
+    clients.filter((client) => {
       client.cb(error, decoded);
       return client.mode !== "persistent";
     })
