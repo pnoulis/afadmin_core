@@ -179,8 +179,13 @@ Registry.prototype.resolve = function resolve(route) {
   if (!this.routes.has(alias) && this.strict) {
     throw new MqttRegistryError(`Unregistered route alias: ${alias}`);
   }
-  const { pub, sub } = this.routes.get(alias) || { pub: alias, sub: alias };
-  return [alias, ...this.replaceParams(pub, sub)];
+  let { pub, sub } = this.routes.get(alias) || { pub: alias, sub: alias };
+  [pub, sub] = this.replaceParams(pub, sub);
+  return {
+    alias,
+    pub,
+    sub,
+  };
 };
 
 export { Registry };

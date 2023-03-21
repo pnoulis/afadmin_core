@@ -1,4 +1,4 @@
-import { LOGGER, AFMError } from './shared.js';
+import { LOGGER, AFMError } from "./shared.js";
 import { Proxy } from "../mqtt/index.js";
 import { BACKEND_TOPICS } from "../../data/backend_topics.js";
 import mqtt from "mqtt";
@@ -37,13 +37,14 @@ client
     LOGGER.debug(`afm boot sequence complete: ${CLIENT_ID}`);
   })
   .catch((err) => {
-    LOGGER.error(new AFMError('AFM failed to bootstrap', err));
+    LOGGER.error(new AFMError("AFM failed to bootstrap", err));
   });
 
 const publish = client.publish.bind(client);
 const subscribe = client.subscribe.bind(client);
-client.publish = (route, payload, options) => tr.run(() => publish(route, payload, options));
-client.subscribe = (route, options, cb) => tr.run(() => new Promise((resolve, reject) => subscribe(route, options, cb)));
-client.publish('player/login', { yolo: true }).then((msg) => console.log(msg));
+client.publish = (route, payload, options) =>
+  tr.run(() => publish(route, payload, options));
+client.subscribe = (route, options, cb) =>
+  tr.run(() => new Promise((resolve, reject) => subscribe(route, options, cb)));
 
-export { client as backend};
+export { client as backend };

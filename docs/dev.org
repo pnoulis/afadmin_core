@@ -158,8 +158,8 @@ A server publishes a message in a fire and forget fashion.
 While a client publishes a message and might need to.
 
 mode: 'ff',
-type: 'response',
-type: 'persistent'
+mode: 'response',
+mode: 'persistent'
 * Agent factory machine
 Has teams
 Each team has a roster.

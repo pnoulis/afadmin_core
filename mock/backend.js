@@ -25,6 +25,10 @@ const tr = new TaskRunner({
   isConnected: () => booted,
 });
 const backend = new Proxy({
+  transactionMode: {
+    publish: "ff",
+    subscribe: "persistent",
+  },
   registry: {
     params: {
       clientId: "temp",
@@ -70,13 +74,9 @@ tr.run(
         } else {
         }
 
-        backend.publish(
-          "/player/login",
-          {
-            ...msg,
-          },
-          { transient: true }
-        );
+        backend.publish("/player/login", {
+          ...msg,
+        });
       });
     })
 );
@@ -112,7 +112,7 @@ tr.run(
             result: "OK",
           };
         }
-        backend.publish("/player/register", payload, { transient: true });
+        backend.publish("/player/register", payload);
       });
     })
 );
@@ -137,9 +137,7 @@ tr.run(
     new Promise((resolve, reject) => {
       backend.subscribe("/packages/list", (err) => {
         if (err) throw err;
-        backend.publish("/packages/list", BACKEND_PACKAGES, {
-          transient: true,
-        });
+        backend.publish("/packages/list", BACKEND_PACKAGES);
       });
     })
 );
@@ -155,9 +153,7 @@ tr.run(
     new Promise((resolve, reject) => {
       backend.subscribe("/teams/list", (err) => {
         if (err) throw err;
-        backend.publish("/teams/list", BACKEND_MOCK_STATE.teams, {
-          transient: true,
-        });
+        backend.publish("/teams/list", BACKEND_MOCK_STATE.teams);
       });
     })
 );

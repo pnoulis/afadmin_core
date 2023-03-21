@@ -1,5 +1,5 @@
 import { TeamsManager } from "./team.js";
-import { backendRunner, backend } from './backend.js';
+import { backend } from "./backend.js";
 
 class AgentFactoryMachine {
   constructor() {

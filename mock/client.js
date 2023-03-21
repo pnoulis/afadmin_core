@@ -61,5 +61,5 @@ client
  **/
 
 tr.run(() => client.publish("/player/register", {}))
-  .then((res) => console.log(res))
+  .then((msg) => console.log(msg))
   .catch((err) => console.log(err));

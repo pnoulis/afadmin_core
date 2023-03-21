@@ -17,6 +17,7 @@ function Proxy(userConf = {}) {
   this.name = conf.name;
   this.id = conf.id;
   this.server = conf.server;
+  this.transactionMode = conf.transactionMode;
   this.registry = new Registry(conf.registry);
   this.subscriptions = new Map();
 
@@ -37,6 +38,21 @@ Proxy.prototype.parseConf = function parseConf(userConf) {
   conf.id = `${conf.name}_${Math.random().toString(16).slice(2, 8)}`;
   conf.registry = userConf.registry || {};
   conf.registry.logger = LOGGER;
+  /*
+    Available modes:
+    ff -> fire and forget
+        Used for publising one way messages. Does not subscribe the client
+        to the response topics
+    response -> Used to emulate a req-res cycle.
+        Used mostly for publishing, but also useful at times for subscriptions.
+        It unregisters the client after one req-res cycle.
+    persistent -> receive all messages until instructed otherwise.
+   */
+  conf.transactionMode = {
+    publish: "response",
+    subscribe: "persistent",
+    ...userConf.transactionMode,
+  };
   conf.server = userConf.server ? userConf.server : { on(...args) {} };
   return conf;
 };
@@ -70,24 +86,24 @@ Proxy.prototype.encode = function encode(msg) {
 /**
  * @param {string} sub - Registered subscription
  * @param {Object} options
- * @param {Boolean} options.transient - A transient client is to be removed after it is the
- * recipient of just one message
- * @param {function} cb - A listener, if the server publishes to the subscirption topic
- * the client is notified through this registered callback
+ * @param {string} options.mode - a value of [ 'ff' || 'response' || 'persistent' ]
+ * @param {callback(err, msg)} cb - A listener, if the server publishes
+ * to the subscirption topic the client is notified through this registered callback
  * @returns {Object} client
  * @returns {string} client.id
  * @returns {function} client.cb
- * @returns {Boolean} client.transient
+ * @returns {string} client.mode
  **/
 Proxy.prototype.registerClient = function registerClient(sub, options, cb) {
-  const clients = this.subscriptions.get(sub);
+  const clients = this.subscriptions.get(sub) || this._subscribe(sub);
   const client = {
     id: `${new Date().getTime()}_${clients.length}`,
     cb,
-    transient: options.transient ?? false,
+    sub,
+    mode: options.mode,
   };
   clients.push(client);
-  LOGGER.debug("Registred new client", clients);
+  LOGGER.debug("Registered new client", clients);
   return client;
 };
 
@@ -114,76 +130,103 @@ Proxy.prototype.unregisterClient = function unregisterClient(sub, clientId) {
  *
  * @param {string} alias - A topic, either registered or unregistered
  * @param {Object} options
- * @param {Boolean} options.transient - A transient client is to be
- * removed after one transaction.
- * @param {function(message)} cb - A client that is to be provided
+ * @param {string} options.mode - a value of [ 'ff' || 'response' || 'persistent' ]
+ * @param {function(err, msg)} cb - A client that is to be provided
  * with the message when and if one is available
  */
-Proxy.prototype.subscribe = function (route, options, cb) {
+Proxy.prototype.subscribe = function subscribe(route, options, cb) {
   if (typeof options === "function") {
     cb = options;
     options = {};
   }
-  const [alias, pub, sub] = this.registry.resolve(route);
+  options.mode ||= this.transactionMode.subscribe;
 
-  if (!this.subscriptions.has(sub)) {
-    this._subscribe(sub); // async
+  try {
+    var { sub } = this.registry.resolve(route);
+    if (!(options.mode !== "persistent" || options.mode !== "response")) {
+      throw new MqttProxyError(
+        `Transaction mode:${options.mode} not supported by subscribe()`
+      );
+    }
+  } catch (err) {
+    return cb(err);
   }
 
-  const { id } = this.registerClient(sub, options, cb);
-  return () => this.unregisterClient(sub, id);
+  const client = this.registerClient(sub, options, cb);
+  return () => this.unregisterClient(sub, client.id);
 };
 
 /**
  * @param {string} sub - Topic to subscribe to
  **/
-Proxy.prototype._subscribe = function (sub) {
-  this.subscriptions.set(sub, []);
-  this.server.subscribe(sub, (err) => {
-    if (err) {
-      LOGGER.debug(`Failed to subscribe to topic: ${sub}`);
-      this.notifyClients(
-        sub,
-        new MqttProxyError(`Failed to subscribe to topic: ${sub}`, err)
-      );
-    } else {
-      LOGGER.debug(`Subscribed to topic: ${sub}`);
-    }
-  });
+Proxy.prototype._subscribe = function _subscribe(sub) {
+  if (!this.subscriptions.has(sub)) {
+    this.subscriptions.set(sub, []);
+    this.server.subscribe(sub, (err) => {
+      if (err) {
+        LOGGER.debug(`Failed to subscribe to topic: ${sub}`);
+        this.notifyClients(
+          sub,
+          new MqttProxyError(`Failed to subscribe to topic: ${sub}`, err)
+        );
+      } else {
+        LOGGER.debug(`Successfully subscribed to topic: ${sub}`);
+      }
+    });
+  }
+  return this.subscriptions.get(sub);
 };
 
 /**
  * @param {string} route - A registered route alias
  * @param {Object} payload - Data to send
+ * @param {Object} options
+ * @param {string} options.mode - a value of [ 'ff' || 'response' || 'persistent' ]
  * @returns {Promise}
  **/
-Proxy.prototype.publish = async function (route, payload = {}, options = {}) {
+Proxy.prototype.publish = async function publish(
+  route,
+  payload = {},
+  options = {}
+) {
+  options.mode ||= this.transactionMode.publish;
   return new Promise((resolve, reject) => {
-    let alias, pub, sub;
-    let client;
     try {
-      [alias, pub, sub] = this.registry.resolve(route);
-      if (!this.subscriptions.has(sub)) {
-        this._subscribe(sub);
+      var { pub, sub } = this.registry.resolve(route);
+      var encoded = this.encode(payload);
+      switch (options.mode) {
+        case "ff":
+          this._publish(pub, encoded, (err) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve();
+            }
+          });
+          break;
+        case "response":
+          const client = this.registerClient(sub, options, (err, msg) => {
+            if (err) {
+              reject(err);
+            } else {
+              resolve(msg);
+            }
+          });
+
+          this._publish(pub, encoded, (err) => {
+            if (err) {
+              this.unregisterClient(sub, client.id);
+              reject(err);
+            }
+          });
+          break;
+        default:
+          throw new MqttProxyError(
+            `Transaction mode:${options.mode} not supported by subscribe()`
+          );
       }
-      client = this.registerClient(sub, options, (err, msg) => {
-        if (err) {
-          reject(err);
-        } else {
-          resolve(msg);
-        }
-      });
-      const encoded = this.encode(payload);
-      this._publish(pub, encoded, client);
-      client.transient && this.unregisterClient(sub, client.id);
     } catch (err) {
-      let error = err;
-      if (!(err instanceof MqttProxyError)) {
-        error = new MqttProxyError("Unknown error", err);
-      }
-      LOGGER.debug(error);
-      reject(error);
-      this.unregisterClient(sub, client.id);
+      return reject(err);
     }
   });
 };
@@ -193,14 +236,14 @@ Proxy.prototype.publish = async function (route, payload = {}, options = {}) {
  * @param {string} payload - The encoded data to send
  * @param {Object} client - The client to deliver the response to, if any
  **/
-Proxy.prototype._publish = function _publish(pub, payload, client) {
+Proxy.prototype._publish = function _publish(pub, payload, cb) {
   this.server.publish(pub, payload, (err) => {
     if (err) {
-      LOGGER.debug("Unknown error", err);
-      client.cb(new MqttProxyError("Unknown error", err));
+      LOGGER.debug(`Failed to publish to topic: ${pub}`, err);
+      cb(new MqttProxyError("Mqtt Broker error", err));
     } else {
-      LOGGER.debug(`Successfully published at topic: ${pub}`);
-      client.transient && client.cb(null);
+      LOGGER.debug(`Successfully published to topic: ${pub}`);
+      cb();
     }
   });
 };
@@ -211,7 +254,7 @@ Proxy.prototype._publish = function _publish(pub, payload, client) {
  * as transmitted by the server or an error which signals the subscription could
  * not be established
  **/
-Proxy.prototype.notifyClients = function (sub, message) {
+Proxy.prototype.notifyClients = function notifyClients(sub, message) {
   let error = null;
   let decoded;
 
@@ -229,11 +272,13 @@ Proxy.prototype.notifyClients = function (sub, message) {
   if (error) {
     LOGGER.debug(error);
   }
-  const clients = this.subscriptions.get(sub).filter((client) => {
-    client.cb(error, decoded);
-    return !client.transient;
-  });
-  this.subscriptions.set(sub, clients);
+  this.subscriptions.set(
+    sub,
+    this.subscriptions.get(sub).filter((client) => {
+      client.cb(error, decoded);
+      return client.mode !== "persistent";
+    })
+  );
 };
 
 export { Proxy };
