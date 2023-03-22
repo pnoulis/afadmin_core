@@ -157,11 +157,19 @@ Proxy.prototype._subscribe = function _subscribe(sub) {
     this.subscriptions.set(sub, []);
     this.server.subscribe(sub, (err) => {
       if (err) {
-        LOGGER.debug(`Failed to subscribe to topic: ${sub}`);
-        this.notifyClients(
-          sub,
-          new MqttProxyError(`Failed to subscribe to topic: ${sub}`, err)
-        );
+        setTimeout(() => {
+          this.server.subscribe(sub, (err) => {
+            if (err) {
+              LOGGER.debug(`Failed to subscribe to topic: ${sub}`);
+              this.notifyClients(
+                sub,
+                new MqttProxyError(`Failed to subscribe to topic: ${sub}`, err)
+              );
+            } else {
+              LOGGER.debug(`Successfully subscribed to topic: ${sub}`);
+            }
+          });
+        }, 1000);
       } else {
         LOGGER.debug(`Successfully subscribed to topic: ${sub}`);
       }
@@ -249,7 +257,7 @@ Proxy.prototype._publish = function _publish(pub, payload, cb) {
  **/
 Proxy.prototype.notifyClients = function notifyClients(sub, msg) {
   const clients = this.subscriptions.get(sub);
-  if (clients.length === 0) {
+  if (!clients || clients.length === 0) {
     return;
   }
 
