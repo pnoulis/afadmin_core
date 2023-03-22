@@ -33,7 +33,6 @@ node-exec: env
 .PHONY: scratch
 scratch: env
 	set -a; source ./.env && node ./tmp/scratch.js
-# set -a source ./.env && node -e "console.log(process.env.MODE)"
 
 .PHONY: run
 run: dirs env-dev
