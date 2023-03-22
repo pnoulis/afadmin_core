@@ -5,6 +5,8 @@ import {
   BackendServerService,
 } from "./services/index.js";
 
+console.log(process.env);
+
 const RUNTIME = detectRuntime();
 const MODE = detectMode();
 const LOGLEVEL = getEnvar("VITE_LOGLEVEL", false, "debug");

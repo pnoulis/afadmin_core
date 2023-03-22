@@ -22,6 +22,19 @@ VITEST = npx vitest
 .PHONY: all
 all: run
 
+.PHONY: node-exec
+params ?=
+node-exec: env
+	@if test -z "$$params"; then echo \
+	"make node-exec missing params: -> params=./file make node-exec"; \
+	exit 1; \
+	fi
+	set -a source ./env && node $$params
+
+.PHONY: scratch
+scratch: env
+	set -a source ./env && node ./tmp/scratch.js
+
 .PHONY: run
 run: dirs env-dev
 	NODE_ENV=development $(BUILD_SYS) serve \
@@ -88,7 +101,10 @@ fmt-check:
 dirs:
 	$(MKDIRP) $(LOGDIR)
 
-.PHONY: env-dev env-staging env-prod
+.PHONY: env env-dev env-staging env-prod
+env:
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode $(MODE)
+	@cat .env
 env-dev:
 	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode development
 	@cat .env
