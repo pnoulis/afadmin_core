@@ -23,17 +23,17 @@ VITEST = npx vitest
 all: run
 
 .PHONY: run
-run: dirs
+run: dirs env-dev
 	NODE_ENV=development $(BUILD_SYS) serve \
 	--mode development $(params)
 
 .PHONY: run-staging
-run-stage: dirs
+run-staging: dirs env-staging
 	NODE_ENV=development $(BUILD_SYS) serve \
 	--mode staging $(params)
 
 .PHONY: run-prod
-run-prod: dirs
+run-prod: dirs env-prod
 	NODE_ENV=development $(BUILD_SYS) serve \
 	--mode production $(params)
 
@@ -53,17 +53,17 @@ build-prod:
 	--mode production $(params)
 
 .PHONY: test
-test:
+test: env-dev
 	NODE_ENV=development $(VITEST) run \
 	--reporter verbose --mode development $(params)
 
 .PHONY: test-staging
-test-staging:
+test-staging: env-staging
 	NODE_ENV=development $(VITEST) run \
 	--reporter verbose --mode staging $(params)
 
 .PHONY: test-prod
-test-prod:
+test-prod: env-prod
 	NODE_ENV=development $(VITEST) run \
 	--reporter verbose --mode production $(params)
 
@@ -87,3 +87,14 @@ fmt-check:
 
 dirs:
 	$(MKDIRP) $(LOGDIR)
+
+.PHONY: env-dev env-staging env-prod
+env-dev:
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode development
+	@cat .env
+env-staging:
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode staging
+	@cat .env
+env-prod:
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode production
+	@cat .env

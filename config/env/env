@@ -1,4 +1,3 @@
-; -*- mode: dotenv; -*-
 VITE_BACKEND_TOPIC_PREFIX=/themaze
 VITE_LOGLEVEL=debug
 VITE_BACKEND_LOGLEVEL=debug
