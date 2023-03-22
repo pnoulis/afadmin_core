@@ -7,7 +7,7 @@ EXECDIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" 2>/dev/null && pwd)
 # Options
 PKGDIR=
 ENVDIR=
-MODE=development
+MODE=
 declare -gA SWITCH_PREFIXES=()
 
 # Loaded environment
@@ -140,6 +140,8 @@ EOF
 main() {
     parse_args "$@"
     set -- "${POSARGS[@]}"
+
+    MODE=${MODE:=dev}
 
     # If PKGDIR or ENVDIR do not pass tests exit
     if [[ -z "${PKGDIR:-}" ]]; then

@@ -1,17 +1,19 @@
 import { TaskRunner } from "../../../task_runners/index.js";
 
-function BackendClient(client) {
+function BackendClient(client, logger) {
   let isBooted = false;
   const tr = new TaskRunner({
+    logger,
     timeout: 30000,
     isConnected: () => client.server.connected && isBooted,
   });
 
-  client.server.on("connect", () => {
-    console.log("Backend client service connected");
+  client.server.on('connect', function notify() {
+    client.logger.info("Backend client service connected");
+    client.server.removeListener('connect', notify);
   });
 
-  client
+    client
     .publish("/boot", {
       deviceId: client.id,
       roomName: "registration5",
@@ -19,7 +21,7 @@ function BackendClient(client) {
     })
     .then((msg) => {
       isBooted = msg.booted;
-      console.log(`${client.id} bootup sequence complete`);
+      client.logger.info(`backend client service:${client.id} bootup sequence complete`);
     })
     .catch((err) => {
       throw err;

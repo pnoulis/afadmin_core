@@ -1,4 +1,4 @@
-import { LOGGER, AFMError } from './shared.js';
+import { LOGGER, AFMError } from "./shared.js";
 
 class PlayersManager {
   constructor(afm) {
@@ -6,15 +6,10 @@ class PlayersManager {
   }
 }
 
-PlayersManager.prototoype.login = async function login(player) {
-}
+PlayersManager.prototoype.login = async function login(player) {};
 
-PlayersManager.prototype.register = function register(player) {
+PlayersManager.prototype.register = function register(player) {};
 
-}
-
-PlayersManager.prototype.has = function has(player) {
-
-}
+PlayersManager.prototype.has = function has(player) {};
 
 export { PlayersManager };

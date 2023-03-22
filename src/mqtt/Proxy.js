@@ -15,6 +15,7 @@ class MqttProxyError extends Error {
 function Proxy(userConf = {}) {
   const conf = this.parseConf(userConf);
   this.id = conf.id;
+  this.logger = conf.logger;
   this.server = conf.server;
   this.transactionMode = conf.transactionMode;
   this.registry = new Registry(conf.registry);
@@ -23,10 +24,8 @@ function Proxy(userConf = {}) {
 }
 
 Proxy.prototype.parseConf = function parseConf(userConf) {
-  if (userConf.logger) {
-    LOGGER = userConf.logger;
-  }
   const conf = {};
+  conf.logger = userConf.logger || LOGGER;
   conf.id =
     userConf.id || `mqtt_proxy:${Math.random().toString(16).slice(2, 8)}`;
   conf.registry = userConf.registry || {};
@@ -96,7 +95,7 @@ Proxy.prototype.registerClient = function registerClient(sub, options, cb) {
     mode: options.mode,
   };
   clients.push(client);
-  LOGGER.debug("Registered new client", clients);
+  this.logger.debug("Registered new client", clients);
   return client;
 };
 
@@ -107,14 +106,14 @@ Proxy.prototype.registerClient = function registerClient(sub, options, cb) {
 Proxy.prototype.unregisterClient = function unregisterClient(sub, clientId) {
   const clients = this.subscriptions.get(sub);
   if (!clients.length) {
-    LOGGER.warn("Trying to unregister client from empty subscription list");
+    this.logger.warn("Trying to unregister client from empty subscription list");
   }
   const client = clients.findIndex((client) => client.id === clientId);
   if (clientId === -1) {
-    LOGGER.warn(`Client: ${clientId} missing from subscription list`);
+    this.logger.warn(`Client: ${clientId} missing from subscription list`);
   } else {
     clients.splice(client, 1);
-    LOGGER.debug(`Successfully unregistered client: ${clientId}`, clients);
+    this.logger.debug(`Successfully unregistered client: ${clientId}`, clients);
   }
 };
 
@@ -160,18 +159,18 @@ Proxy.prototype._subscribe = function _subscribe(sub) {
         setTimeout(() => {
           this.server.subscribe(sub, (err) => {
             if (err) {
-              LOGGER.debug(`Failed to subscribe to topic: ${sub}`);
+              this.logger.debug(`Failed to subscribe to topic: ${sub}`);
               this.notifyClients(
                 sub,
                 new MqttProxyError(`Failed to subscribe to topic: ${sub}`, err)
               );
             } else {
-              LOGGER.debug(`Successfully subscribed to topic: ${sub}`);
+              this.logger.debug(`Successfully subscribed to topic: ${sub}`);
             }
           });
         }, 1000);
       } else {
-        LOGGER.debug(`Successfully subscribed to topic: ${sub}`);
+        this.logger.debug(`Successfully subscribed to topic: ${sub}`);
       }
     });
   }
@@ -240,10 +239,10 @@ Proxy.prototype.publish = async function publish(
 Proxy.prototype._publish = function _publish(pub, payload, cb) {
   this.server.publish(pub, payload, (err) => {
     if (err) {
-      LOGGER.debug(`Failed to publish to topic: ${pub}`, err);
+      this.logger.debug(`Failed to publish to topic: ${pub}`, err);
       cb(new MqttProxyError("Mqtt Broker error", err));
     } else {
-      LOGGER.debug(`Successfully published to topic: ${pub}`);
+      this.logger.debug(`Successfully published to topic: ${pub}`);
       cb();
     }
   });

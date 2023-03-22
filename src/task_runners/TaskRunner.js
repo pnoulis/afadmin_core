@@ -104,7 +104,7 @@ States.Pending.prototype.init = function init() {
 
 States.Pending.prototype.poll = function poll() {
   const intervalId = setInterval(() => {
-    LOGGER.debug("polling");
+    this.taskRunner.logger.debug("polling");
     if (this.taskRunner.isConnected()) {
       clearInterval(intervalId);
       return this.taskRunner.setState("connected");
@@ -129,13 +129,13 @@ States.Connected = function Connected(taskRunner) {
 };
 
 States.Connected.prototype.init = function init() {
-  LOGGER.debug("service connected");
+  this.taskRunner.logger.debug("service connected");
   this.taskRunner.flush();
   this.runJobs();
 };
 
 States.Connected.prototype.runJobs = function runJobs() {
-  LOGGER.debug(`Jobs to run: ${this.taskRunner.jobQueue.length}`);
+  this.taskRunner.logger.debug(`Jobs to run: ${this.taskRunner.jobQueue.length}`);
   if (this.taskRunner.jobQueue.length === 0) {
     this.taskRunner.setState("idle");
   } else if (!this.taskRunner.isConnected()) {
@@ -153,6 +153,7 @@ States.Connected.prototype.run = function run(job) {
 function TaskRunner(userConf = {}) {
   const conf = this.parseConf(userConf);
   this.timeout = conf.timeout;
+  this.logger = conf.logger;
   this.isConnected = conf.isConnected;
   this.pollFrequency = conf.pollFrequency;
   this.jobQueue = [];
@@ -166,25 +167,18 @@ function TaskRunner(userConf = {}) {
 }
 
 TaskRunner.prototype.parseConf = function parseConf(userConf) {
-  if (userConf.logger) {
-    LOGGER = userConf.logger;
-  }
-  const defaultConf = {
-    timeout: 3000,
-    isConnected: () => false,
-    pollFrequency: 1000,
-  };
-
-  return {
-    ...defaultConf,
-    ...userConf,
-  };
+  const conf = {};
+  conf.logger = userConf.logger || LOGGER;
+  conf.timeout = userConf.timeout || 3000;
+  conf.pollFrequency = userConf.pollFrequency || 1000;
+  conf.isConnected = userConf.isConnected ? userConf.isConnected : () => false;
+  return conf;
 };
 
 TaskRunner.prototype.setState = function (state) {
   const oldState = `[TRANSITION]:taskRunner ${this.state?.name}`;
   this.state = this.states[state];
-  LOGGER.debug(`${oldState} -> ${this.state.name}`);
+  this.logger.debug(`${oldState} -> ${this.state.name}`);
   if (!this.state) {
     throw new TaskRunnerError(`Unrecognized state: ${state}`);
   }
@@ -242,7 +236,7 @@ TaskRunner.prototype.newJob = function (task, options) {
           },
         });
       }
-      LOGGER.debug(`new job scheduled: ${this.jobQueue.length}`);
+      this.logger.debug(`new job scheduled: ${this.jobQueue.length}`);
       cb && cb();
     });
 };

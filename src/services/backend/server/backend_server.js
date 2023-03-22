@@ -1,14 +1,16 @@
 import { TaskRunner } from "../../../task_runners/index.js";
 
-function BackendServer(server, mockState, mockPackages) {
+function BackendServer(server, mockState, mockPackages, logger) {
   let booted = false;
   const tr = new TaskRunner({
+    logger,
     timeout: 50000,
     isConnected: () => server.server.connected && booted,
   });
 
-  server.server.on("connect", () => {
-    console.log("Mock Backend server service connected");
+  server.server.on('connect', function notify() {
+    server.logger.info("Mock Backend server service connected");
+    server.server.removeListener('connect', notify);
   });
 
   /**
@@ -19,7 +21,6 @@ function BackendServer(server, mockState, mockPackages) {
   server.subscribe("/boot", (err, msg) => {
     if (err) throw err;
     server.registry.setParam("clientId", msg.deviceId);
-    console.log("Successfuly booted");
     booted = true;
   });
 

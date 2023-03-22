@@ -23,17 +23,17 @@ VITEST = npx vitest
 all: run
 
 .PHONY: node-exec
-params ?=
 node-exec: env
 	@if test -z "$$params"; then echo \
 	"make node-exec missing params: -> params=./file make node-exec"; \
 	exit 1; \
 	fi
-	set -a source ./env && node $$params
+	@set -a; source ./.env && node "$${params}" | pino-pretty
 
 .PHONY: scratch
 scratch: env
-	set -a source ./env && node ./tmp/scratch.js
+	set -a; source ./.env && node ./tmp/scratch.js
+# set -a source ./.env && node -e "console.log(process.env.MODE)"
 
 .PHONY: run
 run: dirs env-dev
@@ -89,9 +89,8 @@ lint-check:
 	$(LINTER) --ext js,jsx .
 
 .PHONY: fmt
-params ?=.
 fmt:
-	$(FORMATER) --write $(params)
+	$(FORMATER) --write "$${params:-.}"
 
 .PHONY: fmt-check
 params ?=.
@@ -106,11 +105,11 @@ env:
 	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode $(MODE)
 	@cat .env
 env-dev:
-	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode development
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode dev
 	@cat .env
 env-staging:
 	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode staging
 	@cat .env
 env-prod:
-	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode production
+	./scripts/dotenv.sh --pkgdir=. --envdir=./config/env --mode prod
 	@cat .env

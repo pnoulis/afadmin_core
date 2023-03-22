@@ -24,8 +24,8 @@ function BackendClientService(mode) {
   }
 }
 
-function service_dev({ proxy }) {
-  return BackendClient(proxy);
+function service_dev({ proxy, logger }) {
+  return BackendClient(proxy, logger);
 }
 
 function service_prod() {
