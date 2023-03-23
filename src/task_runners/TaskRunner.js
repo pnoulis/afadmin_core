@@ -68,11 +68,19 @@
 
 let LOGGER = {
   debug: (...args) => console.log(...args),
+  trace: (...args) => console.log(...args),
 };
 
 class TaskRunnerError extends Error {
   constructor(message, cause) {
     super(message, { cause });
+    this.name = this.constructor.name;
+  }
+}
+
+class TaskRunnerTimeout extends Error {
+  constructor() {
+    super("task timeout");
     this.name = this.constructor.name;
   }
 }
@@ -104,7 +112,7 @@ States.Pending.prototype.init = function init() {
 
 States.Pending.prototype.poll = function poll() {
   const intervalId = setInterval(() => {
-    this.taskRunner.logger.debug("polling");
+    this.taskRunner.logger.trace("polling");
     if (this.taskRunner.isConnected()) {
       clearInterval(intervalId);
       return this.taskRunner.setState("connected");
@@ -129,13 +137,15 @@ States.Connected = function Connected(taskRunner) {
 };
 
 States.Connected.prototype.init = function init() {
-  this.taskRunner.logger.debug("service connected");
+  this.taskRunner.logger.trace("task runner service connected");
   this.taskRunner.flush();
   this.runJobs();
 };
 
 States.Connected.prototype.runJobs = function runJobs() {
-  this.taskRunner.logger.debug(`Jobs to run: ${this.taskRunner.jobQueue.length}`);
+  this.taskRunner.logger.trace(
+    `Jobs to run: ${this.taskRunner.jobQueue.length}`
+  );
   if (this.taskRunner.jobQueue.length === 0) {
     this.taskRunner.setState("idle");
   } else if (!this.taskRunner.isConnected()) {
@@ -210,7 +220,7 @@ TaskRunner.prototype.newJob = function (task, options) {
           timeout: Date.now() + (options.timeout || this.timeout),
           exec: (expired) => {
             if (expired) {
-              task(new TaskRunnerError("Task timeout"));
+              task(new TaskRunnerTimeout());
             } else {
               try {
                 task();
@@ -225,7 +235,7 @@ TaskRunner.prototype.newJob = function (task, options) {
           timeout: Date.now() + (options.timeout || this.timeout),
           exec: (expired) => {
             if (expired) {
-              reject(new TaskRunnerError("Task timeout"));
+              reject(new TaskRunnerTimeout());
             } else {
               try {
                 task().then(resolve, reject);
@@ -236,7 +246,7 @@ TaskRunner.prototype.newJob = function (task, options) {
           },
         });
       }
-      this.logger.debug(`new job scheduled: ${this.jobQueue.length}`);
+      this.logger.trace(`new job scheduled: ${this.jobQueue.length}`);
       cb && cb();
     });
 };

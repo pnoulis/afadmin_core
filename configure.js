@@ -12,9 +12,9 @@ const LOGLEVEL = getEnvar("VITE_LOGLEVEL", false, "debug");
 const CONFIG = {};
 
 if (/dev.*/.test(MODE)) {
-  console.log("Configuration running in development mode");
+  console.log(`Configuration running in mode:${MODE}`);
 
-  const { BACKEND_TOPICS, BACKEND_PACKAGES, BACKEND_MOCK_STATE } = await import(
+  const { BACKEND_TOPICS, BACKEND_MOCK_STATE } = await import(
     "./config/data/index.js"
   );
   const { Proxy } = await import("./src/mqtt/index.js");
@@ -30,7 +30,7 @@ if (/dev.*/.test(MODE)) {
     `${MODE}:${Math.random().toString(16).slice(2, 8)}`
   );
   const BACKEND_LOGLEVEL = getEnvar("VITE_BACKEND_LOGLEVEL", true, LOGLEVEL);
-  const AFM_LOGLEVEL = getEnvar('VITE_AFM_LOGLEVEL', true, LOGLEVEL);
+  const AFM_LOGLEVEL = getEnvar("VITE_AFM_LOGLEVEL", true, LOGLEVEL);
   const mqttBroker = new MqttBroker.connect(HOST, {
     clientId: BACKEND_CLIENT_ID,
   });
@@ -53,25 +53,17 @@ if (/dev.*/.test(MODE)) {
     browser: RUNTIME === "browser" ? { asObject: true } : undefined,
   });
 
-  const backendLogger = Logger.child(
-    {},
-    { msgPrefix: "[BACKEND] ", level: BACKEND_LOGLEVEL }
+  const backendClientLogger = Logger.child(
+    { service: "[BACKEND] [CLIENT]" },
+    { level: BACKEND_LOGLEVEL }
   );
 
-  const backendClientLogger = backendLogger.child(
-    {},
-    { msgPrefix: "[CLIENT] "}
+  const backendServerLogger = Logger.child(
+    { service: "[BACKEND] [SERVER]" },
+    { level: BACKEND_LOGLEVEL }
   );
 
-  const backendServerLogger = backendLogger.child(
-    {},
-    { msgPrefix: "[SERVER] " }
-  );
-
-  const afmLogger = Logger.child(
-    {},
-    { msgPrefix: "[AFM] ", level: AFM_LOGLEVEL }
-  );
+  const afmLogger = Logger.child({ service: "[AFM]" }, { level: AFM_LOGLEVEL });
 
   /*
     Configure mock backend server service
@@ -105,7 +97,6 @@ if (/dev.*/.test(MODE)) {
   const backendServerService = BackendServerService(MODE)({
     proxy: backendServer,
     mockState: BACKEND_MOCK_STATE,
-    mockPackages: BACKEND_PACKAGES,
     logger: backendServerLogger,
   });
 
@@ -137,9 +128,92 @@ if (/dev.*/.test(MODE)) {
     logger: afmLogger,
   };
 
-  CONFIG.afm = new AgentFactoryMachine({ services: afmServices });
+  CONFIG.afm = new AgentFactoryMachine({
+    services: afmServices,
+    state: BACKEND_MOCK_STATE,
+  });
 } else if (/stag.*/.test(MODE)) {
   console.log("Configuration running in staging mode");
+  const { BACKEND_TOPICS, BACKEND_MOCK_STATE } = await import(
+    "./config/data/index.js"
+  );
+  const { Proxy } = await import("./src/mqtt/index.js");
+  if (RUNTIME === "node") {
+    var MqttBroker = await import("mqtt");
+  } else {
+    var MqttBroker = await import("precompiled-mqtt");
+  }
+  const HOST = getEnvar("VITE_BACKEND_URL");
+  const BACKEND_CLIENT_ID = getEnvar(
+    "VITE_BACKEND_CLIENT_ID",
+    true,
+    `${MODE}:${Math.random().toString(16).slice(2, 8)}`
+  );
+  const BACKEND_LOGLEVEL = getEnvar("VITE_BACKEND_LOGLEVEL", true, LOGLEVEL);
+  const AFM_LOGLEVEL = getEnvar("VITE_AFM_LOGLEVEL", true, LOGLEVEL);
+  const mqttBroker = new MqttBroker.connect(HOST, {
+    clientId: BACKEND_CLIENT_ID,
+    username: getEnvar("VITE_BACKEND_AUTH_USERNAME", true),
+    password: getEnvar("VITE_BACKEND_AUTH_PASSWORD", true),
+  });
+
+  /*
+    Configure Loggers
+   */
+
+  const Logger = new Pino({
+    level: LOGLEVEL,
+    name: "afadmin",
+    timestamp: Pino.stdTimeFunctions.isoTime,
+    formatters: {
+      level: (label) => ({ level: label }),
+    },
+    base: {
+      mode: MODE,
+      runtime: RUNTIME,
+    },
+    browser: RUNTIME === "browser" ? { asObject: true } : undefined,
+  });
+
+  const backendClientLogger = Logger.child(
+    { service: "[BACKEND] [CLIENT]" },
+    { level: BACKEND_LOGLEVEL }
+  );
+  const afmLogger = Logger.child({ service: "[AFM]" }, { level: AFM_LOGLEVEL });
+
+  /*
+      Configure backend client service
+      needs: proxy
+     */
+  const backendClient = new Proxy({
+    id: BACKEND_CLIENT_ID,
+    server: mqttBroker,
+    logger: backendClientLogger,
+    registry: {
+      params: { clientId: BACKEND_CLIENT_ID },
+      routes: BACKEND_TOPICS,
+      strict: true,
+    },
+  });
+
+  const backendClientService = new BackendClientService(MODE)({
+    proxy: backendClient,
+    logger: backendClientLogger,
+  });
+
+  /*
+    Configure Agent Factory Machine
+   */
+  const afmServices = {
+    backend: backendClientService,
+    logger: afmLogger,
+  };
+
+  CONFIG.log = Logger;
+  CONFIG.afm = new AgentFactoryMachine({
+    services: afmServices,
+    state: BACKEND_MOCK_STATE,
+  });
 } else if (/prod.*/.test(MODE)) {
   console.log("Configuration running in production mode");
 } else {

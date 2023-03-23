@@ -8,8 +8,8 @@ function BackendServerService(mode) {
   }
 }
 
-function service_dev({ proxy, mockState, mockPackages, logger }) {
-  return BackendServer(proxy, mockState, mockPackages, logger);
+function service_dev({ proxy, mockState, logger }) {
+  return BackendServer(proxy, mockState, logger);
 }
 
 function service_prod() {

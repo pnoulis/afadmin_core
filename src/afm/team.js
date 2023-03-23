@@ -1,6 +1,7 @@
 import { generateRandomName } from "../lib/index.js";
 import { LOGGER, AFMError } from "./shared.js";
 
+let log;
 const States = {};
 States.Initialized = function Initialized(team) {
   this.name = "initialized";
@@ -79,7 +80,7 @@ Team.prototype.parseConf = function parseConf(team) {
 Team.prototype.setState = function (state) {
   const oldState = `[TRANSITION]:taskRunner ${this.state?.name}`;
   this.state = this.states[state];
-  LOGGER.debug(`${oldState} -> ${this.state.name}`);
+  log.debug(`${oldState} -> ${this.state.name}`);
   if (!this.state) {
     throw new AFMError(`Unrecognized state: ${state}`);
   }
@@ -102,17 +103,18 @@ class GroupTeam extends Team {
 class TeamsManager {
   constructor(afm) {
     this.afm = afm;
+    log = LOGGER();
     this.teams = new Map();
     this.activeTeam = null;
   }
 }
 
-TeamsManager.prototype.create = function create(team) {
+TeamsManager.prototype.create = function create(team = {}) {
   const newTeam = team.isGroup
     ? new GroupTeam(team, this.afm)
     : new Team(team, this.afm);
   this.teams.set(newTeam.id, newTeam);
-  LOGGER.debug(`Created team: ${newTeam.id}`);
+  log.debug(`Created team: ${newTeam.id}`);
   return this.teams.get(newTeam.id);
 };
 
@@ -131,7 +133,7 @@ TeamsManager.prototype.rm = function rm(teamId) {
         throw err;
       }
       this.teams.delete(teamId);
-      LOGGER.debug(`Deleted team: ${teamId}`);
+      log.debug(`Deleted team: ${teamId}`);
     });
   }
 };

@@ -5,9 +5,22 @@ class AFMError extends Error {
   }
 }
 
-const LOGGER = {
+let log = {
   debug: (...args) => console.log(...args),
+  info: (...args) => console.log(...args),
   error: (...args) => console.log(...args),
 };
+function LOGGER(logger) {
+  if (logger) {
+    log = logger;
+  }
+  return log;
+}
 
-export { AFMError, LOGGER };
+function mixinErr(msg, err, cb) {
+  const error = new AFMError(msg, err);
+  log.error(error);
+  cb(error);
+}
+
+export { AFMError, LOGGER, mixinErr };

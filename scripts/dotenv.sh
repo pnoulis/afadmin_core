@@ -208,8 +208,12 @@ switch_prefixes() {
 expand_envars() {
     set -o allexport
     for i in "${!ENV[@]}"; do
-        declare "${i}"=$(eval echo "${ENV[$i]}")
-        ENV[$i]=$(eval echo "${ENV[$i]}")
+      export ${i}=${ENV[$i]}
+    done
+
+    for i in "${!ENV[@]}"; do
+      declare "${i}"=$(eval echo "${ENV[$i]}")
+      ENV[$i]=$(eval echo "${ENV[$i]}")
     done
 }
 

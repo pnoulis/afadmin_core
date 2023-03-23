@@ -18,6 +18,7 @@ BUILD_SYS = npx vite
 LINTER = npx eslint
 FORMATER = npx prettier
 VITEST = npx vitest
+PRETTY_OUTPUT = npx pino-pretty
 
 .PHONY: all
 all: run
@@ -28,11 +29,11 @@ node-exec: env
 	"make node-exec missing params: -> params=./file make node-exec"; \
 	exit 1; \
 	fi
-	@set -a; source ./.env && node "$${params}" | pino-pretty
+	@set -a; source ./.env && node "$${params}" | $(PRETTY_OUTPUT)
 
 .PHONY: scratch
 scratch: env
-	set -a; source ./.env && node ./tmp/scratch.js
+	set -a; source ./.env && node ./tmp/scratch.js | $(PRETTY_OUTPUT)
 
 .PHONY: run
 run: dirs env-dev

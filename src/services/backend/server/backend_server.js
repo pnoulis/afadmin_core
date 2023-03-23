@@ -1,6 +1,7 @@
 import { TaskRunner } from "../../../task_runners/index.js";
 
-function BackendServer(server, mockState, mockPackages, logger) {
+function BackendServer(server, mockState, logger) {
+  const state = mockState;
   let booted = false;
   const tr = new TaskRunner({
     logger,
@@ -8,9 +9,9 @@ function BackendServer(server, mockState, mockPackages, logger) {
     isConnected: () => server.server.connected && booted,
   });
 
-  server.server.on('connect', function notify() {
+  server.server.on("connect", function notify() {
     server.logger.info("Mock Backend server service connected");
-    server.server.removeListener('connect', notify);
+    server.server.removeListener("connect", notify);
   });
 
   /**
@@ -79,6 +80,7 @@ function BackendServer(server, mockState, mockPackages, logger) {
           } else {
             payload = {
               result: "OK",
+              ...req,
             };
           }
           server.publish("/player/register", payload);
@@ -106,7 +108,7 @@ function BackendServer(server, mockState, mockPackages, logger) {
       new Promise((resolve, reject) => {
         server.subscribe("/packages/list", (err) => {
           if (err) throw err;
-          server.publish("/packages/list", BACKEND_PACKAGES);
+          server.publish("/packages/list", state.packages);
         });
       })
   );
@@ -122,7 +124,7 @@ function BackendServer(server, mockState, mockPackages, logger) {
       new Promise((resolve, reject) => {
         server.subscribe("/teams/list", (err) => {
           if (err) throw err;
-          server.publish("/teams/list", BACKEND_MOCK_STATE.teams);
+          server.publish("/teams/list", state.teams);
         });
       })
   );

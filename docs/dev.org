@@ -168,12 +168,21 @@ A roster is made up of players.
 Each player is assigned a wristband.
 ** DONE Create team
 CLOSED: [2023-03-20 Mon 23:13]
+afm.teams.create({})
 ** DONE Remove team
 CLOSED: [2023-03-20 Mon 23:13]
-
-** TODO create player
-** TODO register player
-** TODO login player
+afm.teams.rm(teamId)
+** DONE create player
+CLOSED: [2023-03-23 Thu 15:40]
+** DONE register player
+CLOSED: [2023-03-23 Thu 15:40]
+afm.players.register();
+** DONE login player
+CLOSED: [2023-03-23 Thu 15:40]
+afm.players.login();
+** TODO assign wristband
+*** TODO subscribe to wristband scan
+*** TODO request wristband info
 * Environment variables
 ** backend variables
 BACKEND_AUTH_USERNAME=
@@ -185,3 +194,6 @@ BACKEND_HOST=
 BACKEND_PORT=
 VITE_BACKEND_URL=${BACKEND_PROTOCOL}://${BACKEND_AUTH_USERNAME}:${BACKEND_AUTH_PASSWORD}@${BACKEND_HOST}:${BACKEND_PORT}
 VITE_BACKEND_CLIENT_ID=
+
+* emulate scan in mqtt explorer
+/themaze/registration5/emulateScan/r/r

@@ -143,8 +143,11 @@ Registry.prototype.canonicalizeTopics = function canonicalizeTopics(...topics) {
  * @returns {string|string[]}
  */
 Registry.prototype.replaceParams = function replaceParams(...topics) {
-  return topics.map((topic, i) =>
-    topic.replace(/\${([a-z]+)}/gi, (match, param) => {
+  return topics.map((topic, i) => {
+    if (topic === null) {
+      return topic;
+    }
+    return topic.replace(/\${([a-z]+)}/gi, (match, param) => {
       const value = this.getParam(param);
       if (!value) {
         throw new MqttRegistryError(
@@ -152,8 +155,8 @@ Registry.prototype.replaceParams = function replaceParams(...topics) {
         );
       }
       return value;
-    })
-  );
+    });
+  });
 };
 
 /**

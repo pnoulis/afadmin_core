@@ -1,4 +1,5 @@
 import { TaskRunner } from "../../../task_runners/index.js";
+import * as Errors from "../../../errors.js";
 
 function BackendClient(client, logger) {
   let isBooted = false;
@@ -8,33 +9,76 @@ function BackendClient(client, logger) {
     isConnected: () => client.server.connected && isBooted,
   });
 
-  client.server.on('connect', function notify() {
+  const parseRes = (res) => {
+    if (res.result === "NOK") {
+      if (res.validationErrors) {
+        throw new Errors.ValidationError({
+          validationErrors: res.validationErrors,
+        });
+      } else {
+        throw new Errors.ModelError({ message: res.message });
+      }
+    }
+    return res;
+  };
+
+  const parseErr = (err) => {
+    if (/timeout/.test(err.message)) {
+      throw new Errors.TimeoutError(err);
+    } else {
+      throw err;
+    }
+  };
+
+  const logRes = (res) => {
+    client.logger.info({ response: res });
+    return res;
+  };
+
+  client.server.on("connect", function notify() {
     client.logger.info("Backend client service connected");
-    client.server.removeListener('connect', notify);
+    client.server.removeListener("connect", notify);
   });
 
-    client
+  client
     .publish("/boot", {
       deviceId: client.id,
       roomName: "registration5",
       deviceType: "REGISTRATION_SCREEN",
     })
-    .then((msg) => {
-      isBooted = msg.booted;
-      client.logger.info(`backend client service:${client.id} bootup sequence complete`);
-    })
-    .catch((err) => {
-      throw err;
-    });
+    .then(logRes)
+    .then(parseRes)
+    .then(() => (isBooted = true))
+    .catch(parseErr);
 
   const publish = client.publish.bind(client);
   const subscribe = client.subscribe.bind(client);
   client.publish = (route, payload, options) =>
-    tr.run(() => publish(route, payload, options));
+    tr
+      .run(() => publish(route, payload, options))
+      .then(logRes)
+      .then(parseRes)
+      .catch(parseErr);
+
   client.subscribe = (route, options, cb) =>
-    tr.run({ cb: true }, (err) =>
-      err ? cb(err) : subscribe(route, options, cb)
-    );
+    tr.run({ cb: true }, (err) => {
+      try {
+        if (err) {
+          parseErr(err);
+        }
+        subscribe(route, options, (err, res) => {
+          if (err) {
+            parseErr(err);
+          }
+          logRes(res);
+          parseRes(res);
+
+          cb(null, res);
+        });
+      } catch (err) {
+        cb(err);
+      }
+    });
   return client;
 }
 
