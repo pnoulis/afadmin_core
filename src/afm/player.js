@@ -3,6 +3,22 @@ import { LOGGER, AFMError, mixinErr } from "./shared.js";
 import * as Errors from "../errors.js";
 
 let log;
+
+class Player {
+  static afm;
+  constructor(afm) {}
+
+  static register() {}
+
+  static login() {}
+
+  static create() {}
+
+  static {
+    var a = "yolo";
+  }
+}
+
 class PlayersManager {
   constructor(afm) {
     this.afm = afm;
