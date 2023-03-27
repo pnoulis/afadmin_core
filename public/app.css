@@ -1,25 +1,135 @@
 html,
 body {
-  width: 100vw;
-  height: 100vh;
+    width: 100vw;
+    height: 100vh;
 }
 
 body {
-  display: flex;
-  justify-content: center;
-  align-items: center;
+    display: flex;
+    justify-content: center;
+    align-items: center;
 }
 
 #app-root {
-  position: absolute;
-  width: 1920px;
-  height: 1080px;
-  max-width: 100vw;
-  max-height: 100vh;
-  font-family: NoirPro, Roboto, Ubuntu, Cantarell, Fira Sans, Droid Sans;
+    position: absolute;
+    width: 1920px;
+    height: 1080px;
+    max-width: 100vw;
+    max-height: 100vh;
+    font-family: Roboto-Regular, NoirPro-Regular;
 }
 
 #app-react-root {
+    width: 100%;
+    height: 100%;
+}
+
+#app-layout {
+    all: unset;
+    box-sizing: border-box;
+    display: grid;
+    grid-template-rows: minmax(40px, max-content) 1fr;
+    grid-template-columns: 250px 1fr;
+    grid-template-areas: "sidebar header" "sidebar main";
+    width: 100%;
+    height: 100%;
+    margin: auto;
+    color: black;
+    background-color: var(--grey-light);
+}
+
+#app-header {
+    all: unset;
+    box-sizing: border-box;
+    grid-area: header;
+}
+
+#app-sidebar {
+    all: unset;
+    box-sizing: border-box;
+    grid-area: sidebar;
+}
+
+#app-main {
+    all: unset;
+    box-sizing: border-box;
+    padding: 15px 20px;
+    grid-area: main;
+}
+
+#sidebar-root {
+    all: unset;
+    box-sizing: border-box;
+    display: flex;
+    flex-flow: column nowrap;
+    align-items: center;
+    width: 100%;
+    height: 100%;
+    padding: 2px 14px;
+    grid-area: sidebar;
+    background-image: url("../assets/backgrounds/sidebar.png");
+}
+
+#sidebar-header {
+    all: unset;
+    box-sizing: border-box;
+    flex: 0 1 200px;
+    align-self: stretch;
+}
+
+#sidebar-line {
+    all: unset;
+    box-sizing: border-box;
+    height: 2px;
+    width: 100%;
+    background-color: white;
+}
+
+#sidebar-navbar {
+  all: unset;
+  box-sizing: border-box;
+  flex: 1;
+  padding: 15px 0 20px 0;
+  align-self: stretch;
+}
+
+#sidebar-lang-widget {
+  all: unset;
+  box-sizing: border-box;
+}
+
+#sidebar-time-widget {
+  all: unset;
+  box-sizing: border-box;
+  margin-top: 30px;
+  margin-bottom: 20px;
+}
+
+#app-main-panel {
+  all: unset;
+  box-sizing: border-box;
+  display: grid;
+  grid-template-rows: 115px 1fr;
+  grid-template-columns: 1fr;
+  grid-template-areas: "header" "main";
   width: 100%;
   height: 100%;
+  padding: 15px;
+  background-color: white;
+  border-radius: var(--br-xl);
+}
+
+#panel-header {
+  all: unset;
+  box-sizing: border-box;
+  display: flex;
+  flex-flow: row nowrap;
+  grid-area: header;
+}
+
+#panel-main {
+  all: unset;
+  box-sizing: border-box;
+  grid-area: main;
+  padding: 50px 20px 20px 10px;
 }
