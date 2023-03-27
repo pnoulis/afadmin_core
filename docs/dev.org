@@ -184,6 +184,8 @@ afm.players.login();
 *** DONE subscribe to wristband scan
 CLOSED: [2023-03-24 Fri 09:03]
 *** TODO request wristband info
+** Persisting
+the afm.save();
 * Environment variables
 ** backend variables
 BACKEND_AUTH_USERNAME=

@@ -31,7 +31,7 @@ function BackendClient(client, logger) {
   };
 
   const logRes = (res) => {
-    client.logger.info({ response: res });
+    client.logger.info({ response: res }, "backend response");
     return res;
   };
 

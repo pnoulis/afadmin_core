@@ -1,141 +1,118 @@
 import { generateRandomName } from "../lib/index.js";
-import { LOGGER, AFMError } from "./shared.js";
-
-let log;
-const States = {};
-States.Initialized = function Initialized(team) {
-  this.name = "initialized";
-  this.team = team;
-  this.getState = () => this;
-};
-States.Initialized.prototype.rm = function rm(cb) {
-  cb();
-};
-
-States.Cached = function Cached(team) {
-  this.name = "cached";
-  this.team = team;
-  this.getState = () => this;
-};
-States.Cached.prototype.rm = function rm(cb) {
-  cb();
-};
-States.Registered = function Registered(team) {
-  this.name = "registered";
-  this.team = team;
-  this.getState = () => this;
-};
-States.Registered.prototype.rm = function rm(cb) {
-  cb();
-};
-States.Playing = function Playing(team) {
-  this.name = "playing";
-  this.team = team;
-  this.getState = () => this;
-};
-States.Playing.prototype.rm = function rm(cb) {
-  cb(new AFMError(`Cannot remove a playing team:${this.team.id}`));
-};
-
-States.Paused = function Paused(team) {
-  this.name = "paused";
-  this.team = team;
-  this.getState = () => this;
-};
-States.Paused.prototype.rm = function rm(cb) {
-  cb(new AFMError(`Cannot remove a playing team:${this.team.id}`));
-};
+function teamsFactory(afm) {
+  // static initialization
+  Team.afm ||= afm;
+  Team.teams ||= new Map();
+  return Team;
+}
 
 class Team {
-  constructor(team, afm) {
-    const conf = this.parseConf(team);
-    this.afm = afm;
+  static afm;
+  static teams;
+  constructor(team = {}) {
+    const conf = Team.parseConf(team);
     this.id = conf.id;
-    this.isGroup = conf.isGroup;
     this.name = conf.name;
     this.roster = conf.roster;
     this.packages = conf.packages;
     this.state = null;
     this.states = {
-      initialized: new States.Initialized(this),
-      cached: new States.Cached(this),
-      registered: new States.Registered(this),
-      playing: new States.Playing(this),
-      paused: new States.Paused(this),
+      initialized: new Initialized(this),
+      cached: new Cached(this),
+      registered: new Registered(this),
+      playing: new Playing(this),
+      paused: new Paused(this),
     };
-    this.setState("initialized");
+    this.setState(conf.state);
+  }
+
+  static create(team = {}) {
+    const newTeam = new Team(team);
+    this.teams.set(newTeam.id, newTeam);
+    return newTeam;
+  }
+  static set() {
+    console.log("shall set");
+  }
+  static get() {}
+  static has() {}
+  static parseConf(userConf) {
+    const conf = {};
+    conf.id = userConf.id || Math.random().toString(16).slice(2, 8);
+    conf.name = userConf.name || generateRandomName();
+    conf.roster = userConf.roster || [];
+    conf.packages = userConf.packges || [];
+    conf.state = "initialized";
+    return conf;
   }
 }
 
-Team.prototype.parseConf = function parseConf(team) {
-  const conf = {};
-  conf.id = Math.random().toString(16).slice(2, 8);
-  conf.name = generateRandomName();
-  conf.roster = [];
-  conf.packages = [];
-  conf.isGroup = team.isGroup ?? false;
-  return conf;
+Team.prototype.setState = function setState(state, cb) {
+  if (typeof state === "string") {
+    this.state = this.states[state];
+  } else {
+    this.state = state;
+  }
+  cb && cb(this.state);
 };
 
-Team.prototype.setState = function (state) {
-  const oldState = `[TRANSITION]:taskRunner ${this.state?.name}`;
-  this.state = this.states[state];
-  log.debug(`${oldState} -> ${this.state.name}`);
-  if (!this.state) {
-    throw new AFMError(`Unrecognized state: ${state}`);
+Team.prototype.rm = function rm() {
+  return "deleted team";
+};
+
+class State {
+  constructor(team) {
+    this.team = team;
   }
 
-  if ("init" in this.state) {
-    this.state.init();
-  }
-};
-
-Team.prototype.rm = function rm(cb) {
-  return this.state.rm(cb);
-};
-
-class GroupTeam extends Team {
-  constructor(team, afm) {
-    super({ ...team, isGroup: true }, afm);
+  getState() {
+    return this;
   }
 }
 
-class TeamsManager {
-  constructor(afm) {
-    this.afm = afm;
-    log = LOGGER();
-    this.teams = new Map();
-    this.activeTeam = null;
+class Initialized extends State {
+  constructor(team) {
+    super(team);
+  }
+  static get name() {
+    return Initialized.name.toLowerCase();
   }
 }
 
-TeamsManager.prototype.create = function create(team = {}) {
-  const newTeam = team.isGroup
-    ? new GroupTeam(team, this.afm)
-    : new Team(team, this.afm);
-  this.teams.set(newTeam.id, newTeam);
-  log.debug(`Created team: ${newTeam.id}`);
-  return this.teams.get(newTeam.id);
-};
-
-TeamsManager.prototype.get = function get(teamId) {
-  return this.teams.get(teamId);
-};
-
-TeamsManager.prototype.has = function has(teamId) {
-  return this.teams.has(teamId);
-};
-
-TeamsManager.prototype.rm = function rm(teamId) {
-  if (this.has(teamId)) {
-    this.get(teamId).rm((err) => {
-      if (err) {
-        throw err;
-      }
-      this.teams.delete(teamId);
-      log.debug(`Deleted team: ${teamId}`);
-    });
+class Cached extends State {
+  constructor(team) {
+    super(team);
   }
-};
+  static get name() {
+    return Cached.name.toLowerCase();
+  }
+}
 
-export { Team, GroupTeam, TeamsManager };
+class Registered extends State {
+  constructor(team) {
+    super(team);
+  }
+  static get name() {
+    return Registered.name.toLowerCase();
+  }
+}
+
+class Playing extends State {
+  constructor(team) {
+    super(team);
+  }
+  static get name() {
+    return Playing.name.toLowerCase();
+  }
+}
+
+class Paused extends State {
+  constructor(team) {
+    super(team);
+  }
+  static get name() {
+    return Paused.name.toLowerCase();
+  }
+}
+
+export { teamsFactory };
