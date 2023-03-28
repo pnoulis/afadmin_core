@@ -57,7 +57,7 @@ Team.prototype.setState = function setState(state, cb) {
 };
 
 Team.prototype.rm = function rm() {
-  return "deleted team";
+  return "removing ";
 };
 
 class State {

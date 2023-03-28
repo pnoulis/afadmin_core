@@ -18,6 +18,7 @@ const StyledTextInput = styled.div`
   pointer-events: none;
   // position
   position: relative;
+  text-align: center;
 
   .input {
     pointer-events: auto;
@@ -48,6 +49,7 @@ const StyledTextInput = styled.div`
     transition-duration: 0.3s;
     color: var(--black-subtle);
     pointer-events: none;
+    text-transform: uppercase;
   }
 
   .optional {
@@ -60,7 +62,6 @@ const StyledTextInput = styled.div`
     right: 10px;
     padding: 0 5px;
     transform: translate(0, -50%);
-    text-transform: lowercase;
     color: var(--info-base);
   }
 
