@@ -1,1 +1,1 @@
-export * from "./route.jsx";
+export * from "./RouteHome.jsx";
