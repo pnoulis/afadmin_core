@@ -16,7 +16,7 @@ function BackendClient(client, logger) {
           validationErrors: res.validationErrors,
         });
       } else {
-        throw new Errors.ModelError({ message: res.message });
+        throw new Errors.ModelError("", res.message);
       }
     }
     return res;

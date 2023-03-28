@@ -3,6 +3,7 @@ import {
   AppLayoutPanelHeader,
   AppLayoutPanelMain,
 } from "/src/app/site_wide/index.js";
+import { Outlet } from "react-router-dom";
 import { Header } from "./Header.jsx";
 
 function RouteRegistration() {
@@ -11,7 +12,9 @@ function RouteRegistration() {
       <AppLayoutPanelHeader>
         <Header />
       </AppLayoutPanelHeader>
-      <AppLayoutPanelMain>route registration</AppLayoutPanelMain>
+      <AppLayoutPanelMain>
+        <Outlet />
+      </AppLayoutPanelMain>
     </AppLayoutMainPanel>
   );
 }

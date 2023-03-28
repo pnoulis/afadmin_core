@@ -3,6 +3,7 @@ import styled from "styled-components";
 import { FlashMessage } from "./FlashMessage";
 
 const StyleLayoutFlashMessagesRoot = styled.div`
+  pointer-events: none;
   position: fixed;
   display: grid;
   grid-auto-columns: 1fr;
@@ -11,6 +12,8 @@ const StyleLayoutFlashMessagesRoot = styled.div`
   width: 100%;
   bottom: 0;
   margin-bottom: 30px;
+  justify-items: end;
+  padding-right: 70px;
 `;
 
 function FlashMessagesRoot() {

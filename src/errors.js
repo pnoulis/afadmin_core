@@ -12,8 +12,8 @@ class ValidationError extends Error {
 }
 
 class ModelError extends Error {
-  constructor(cause) {
-    super("Model error", { cause });
+  constructor(message, cause) {
+    super(message, { cause });
     this.name = this.constructor.name;
     this.statusCode = 409;
     this.statusLabel = "Conflict";

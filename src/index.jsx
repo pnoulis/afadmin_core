@@ -4,9 +4,6 @@ import { routesApp } from "./app/index.js";
 import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import { FlashMessagesRoot } from "./flash_messages";
 import { ModalsRoot } from "./modals";
-import { CONFIG } from "../configure.js";
-
-console.log(CONFIG);
 
 const router = createBrowserRouter([
   {
@@ -14,12 +11,6 @@ const router = createBrowserRouter([
     children: routesApp,
   },
 ]);
-
-ReactDOM.createRoot(document.getElementById("app-react-root")).render(
-  <React.StrictMode>
-    <RouterProvider router={router} />
-  </React.StrictMode>
-);
 
 ReactDOM.createRoot(
   document.getElementById("flash-messages-react-root")
@@ -35,5 +26,11 @@ const modalsRoot = ReactDOM.createRoot(
 modalsRoot.render(
   <React.StrictMode>
     <ModalsRoot root={modalsRoot} />
+  </React.StrictMode>
+);
+
+ReactDOM.createRoot(document.getElementById("app-react-root")).render(
+  <React.StrictMode>
+    <RouterProvider router={router} />
   </React.StrictMode>
 );

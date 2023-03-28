@@ -18,9 +18,9 @@ function LOGGER(logger) {
 }
 
 function mixinErr(msg, err, cb) {
-  const error = new AFMError(msg, err);
-  log.error(error);
-  cb(error);
+  err.message = msg;
+  log.error(err);
+  cb(err);
 }
 
 export { AFMError, LOGGER, mixinErr };

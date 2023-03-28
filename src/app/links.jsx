@@ -20,13 +20,13 @@ function getHomeLink(asComponent = false) {
 function getRegistrationLink(asComponent = false) {
   if (!asComponent) {
     return {
-      path: "/registration",
+      path: "/registration/player",
       label: "registration",
     };
   }
 
   return function RegistrationLink({ children, ...props }) {
-    <NavLink to="/registration" {...props}>
+    <NavLink to="/registration/player" {...props}>
       {children}
     </NavLink>;
   };
@@ -50,13 +50,13 @@ function getRegistrationPlayerLink(asComponent = false) {
 function getRegistrationWristbandLink(asComponent = false) {
   if (!asComponent) {
     return {
-      path: "/registration/wristband",
+      path: "/registration/player/wristband",
       label: "pair wristband",
     };
   }
 
   return function RegistrationWristbandLink({ children, ...props }) {
-    <NavLink to="/registration/wristband" {...props}>
+    <NavLink to="/registration/player/wristband" {...props}>
       {children}
     </NavLink>;
   };
@@ -65,13 +65,13 @@ function getRegistrationWristbandLink(asComponent = false) {
 function getRegistrationHistoryLink(asComponent = false) {
   if (!asComponent) {
     return {
-      path: "/registration/history",
-      label: "history",
+      path: "/registration/player/history",
+      label: "players",
     };
   }
 
   return function RegistrationHistoryLink({ children, ...props }) {
-    <NavLink to="/registration/history" {...props}>
+    <NavLink to="/registration/player/history" {...props}>
       {children}
     </NavLink>;
   };

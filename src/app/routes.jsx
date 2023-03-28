@@ -1,6 +1,11 @@
 import { App } from "./App.jsx";
 import { RouteHome } from "./route_home/index.js";
-import { RouteRegistration } from "./route_registration/index.js";
+import {
+  RouteRegistration,
+  RoutePlayer,
+  RouteWristband,
+  RouteHistory,
+} from "./route_registration/index.js";
 
 const routesApp = [
   {
@@ -12,8 +17,22 @@ const routesApp = [
         element: <RouteHome />,
       },
       {
-        path: "/registration",
+        path: "/registration/player",
         element: <RouteRegistration />,
+        children: [
+          {
+            path: "/registration/player",
+            element: <RoutePlayer />,
+          },
+          {
+            path: "/registration/player/wristband",
+            element: <RouteWristband />,
+          },
+          {
+            path: "/registration/player/history",
+            element: <RouteHistory />,
+          },
+        ],
       },
     ],
   },

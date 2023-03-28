@@ -1,31 +1,32 @@
 import styled from "styled-components";
 
 const StyleLayoutFlashMessage = styled.div`
+  pointer-events: none;
   padding: 10px 20px;
-  min-width: 350px;
-  max-width: 500px;
+  min-width: 400px;
+  max-width: 600px;
   width: max-content;
   margin: auto;
-  border-radius: var(--border-radius-0);
-  font-size: var(--text-md);
+  border-radius: var(--br-nl);
+  font-size: var(--tx-md);
   letter-spacing: 1px;
   display: flex;
   flex-flow: row nowrap;
   align-items: center;
   color: white;
   gap: 20px;
-  box-shadow: 2px 8px 50px rgba(0, 0, 0, 0.3), -2px -2px 8px rgba(0, 0, 0, 0.3);
+  box-shadow: var(--sd-8);
 
   background-color: ${({ variant }) => {
     switch (variant) {
       case "info":
-        return "var(--info)";
+        return "var(--info-strong)";
       case "success":
-        return "var(--success - strong)";
+        return "var(--success-medium)";
       case "warning":
-        return "var(--warn)";
+        return "var(--warn-strong)";
       case "error":
-        return "var(--error-2)";
+        return "var(--error-base)";
       default:
         return "black";
     }

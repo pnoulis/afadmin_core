@@ -8,20 +8,24 @@ import {
   Header,
   Sidebar,
 } from "./site_wide/index.js";
+import { useAfm, AfmProvider } from "/src/hooks/index.js";
 
 function App() {
+  const afm = useAfm();
   return (
-    <AppLayout>
-      <AppLayoutHeader>
-        <Header />
-      </AppLayoutHeader>
-      <AppLayoutSidebar>
-        <Sidebar />
-      </AppLayoutSidebar>
-      <AppLayoutMain>
-        <Outlet />
-      </AppLayoutMain>
-    </AppLayout>
+    <AfmProvider value={afm}>
+      <AppLayout>
+        <AppLayoutHeader>
+          <Header />
+        </AppLayoutHeader>
+        <AppLayoutSidebar>
+          <Sidebar />
+        </AppLayoutSidebar>
+        <AppLayoutMain>
+          <Outlet />
+        </AppLayoutMain>
+      </AppLayout>
+    </AfmProvider>
   );
 }
 

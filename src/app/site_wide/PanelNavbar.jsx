@@ -103,7 +103,7 @@ function PanelNavbar({ items }) {
       <ul className="navbar-list">
         {items.map((item) => (
           <li className="navbar-list-item" key={item.path}>
-            <StylePanelNavbarLink to={item.path}>
+            <StylePanelNavbarLink to={item.path} end>
               <StylePanelNavbarLinkIcon>
                 <Svg>{item.Icon}</Svg>
               </StylePanelNavbarLinkIcon>
