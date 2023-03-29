@@ -133,3 +133,24 @@ body {
   grid-area: main;
   padding: 50px 0px 10px 0px;
 }
+
+
+.check:hover {
+  background-color: yellow;
+}
+
+.check:focus {
+  background-color: red;
+}
+
+.check.active {
+  background-color: green;
+}
+
+.check.selected {
+  background-color: pink;
+}
+
+.check:active {
+  background-color: blue;
+}
