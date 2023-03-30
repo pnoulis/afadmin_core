@@ -200,3 +200,19 @@ VITE_BACKEND_CLIENT_ID=
 
 * emulate scan in mqtt explorer
 /themaze/registration5/emulateScan/r/r
+
+* TODO services must be explicitly started so that VITE_NO_AFM can work
+* Search Player
+** useClick
+CLICK on the reference el -> toggles ON OFF
+
+ENTER on the reference el
+while the keyboardHandlers FLAG -> toggles ON OFF
+
+SPACE on the reference el
+while the keyboardHandlers FLAG is ON -> toggles ON OFF
+** useFocus
+FOCUS on the reference el -> toggles ON OFF
+
+CLICK on the reference el
+while the keyboardOnly FLAG is OFF -> toggles ON OFF

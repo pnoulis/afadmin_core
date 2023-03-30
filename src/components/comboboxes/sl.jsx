@@ -20,47 +20,114 @@ import {
 
 /*
 
-  Tabbable vs Focusable:
-  tabable and focusable: 0
-  only focusable: -1
+  RESOURCES:
+  https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/
 
 
-  UseListNavigationHook
+  GLOSSARY:
+  _combobox_ -> A composite GUI widget used to make a selection from a list
+     of candidates which it displays through the help of a popup component.
 
-  getReferenceProps -> loads of mouse evenst
-  getFloatingProps -> tabIndex, aria-orientation, onKeydown, onPointerMove
-  getItemProps -> onFocus, onClick, onMouseMove, onPointerLeave
-  must be focusable -> using tabIndex
-  makes the item active if it is being hovered, if it is being
-  focused, if it is clicked
+  _listbox_ -> The popup component of the combobox. It is responsible for
+     displaying the list of candidate options.
 
-  useListNavigation only cares about:
-  up and arrow keys on the floating element and item elements
-  click and hover on the item elements.
+  _option_ -> A candidate option.
 
+  _textbox_ -> In some type of comboboxes the user is provided with an text input
+     area which he may use to quickly select an option from the list of candidate
+     options instead of having to scroll through the list to find it.
 
+  _DOM focus_ -> In browsers a user may "select" an element. The selected element
+     is said to be the recipient of the DOM focus.
 
+  _VISUAL focus_ -> An element which is only "visually" selected but not in actual
+     DOM focus. Implementing VISUAL focus is achievable through may means. One of
+     this could be the use of classes. Aria has formalized the pattern through the
+     use of its aria-activedescendant property.
 
+  _TAB Sequence_ ->
+     https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#kbd_general_between
 
-tab and shift+tab keys move focus
-arrow keys move focus
-tab sequence / tab ring -> the path used by focus, the order
-by which elements can be focused and are focused upon user interaction.
-
-
-In a GUI component with multiple focusable elements only the root element
-partakes in the tab sequence.
-pressing the arrow keys then moves the focus within the focused tab sequence
-element.
-pressing tab again moves the focus to the next element in the tab sequence.
+  _Roving tab index_ ->
+     https://www.w3.org/WAI/ARIA/apg/practices/keyboard-interface/#kbd_roving_tabindex
 
 
-composite widget -> a GUI component composed of multiple focusable elements.
-managing focus -> the process by which the programmer controls focus within
-a composite widget.
+  FEATURES:
+  [ ] -> cursor should change to pointer when user hovers on the reference element
+  [ ] -> the reference element must be highlighted in some way (border) when it
+         is in the open state.
+  [ ] -> The combobox is a composite component. Only the reference element
+         partakes in the TAB sequence. The options within the listbox are
+         focusable but do not move focus away from the textbox in the reference
+         element by utilizing the aria-activedescendant property.
+  [ ] -> The following aria properties should be utilized:
 
-.focus -> focuses an element
-.blur -> removes focus from element
+         combobox:
+
+         - [ ] aria-activedescendant=IDREF (current active option)
+         - [ ] aria-role=combobox
+         - [ ] aria-expanded=[true || false]
+         - [ ] aria-haspopup=true
+         - [ ] aria-controls=IDREF (popup element)
+         - [ ] aria-autocomplete=list
+
+
+         listbox:
+
+         - [ ] aria-label=
+         - [ ] aria-role=listbox
+
+         Options:
+
+         - [ ] aria-role=option
+         - [ ] aria-selected=[true || false]
+
+
+  CONTROLS:
+
+  TAB
+  [ ] -> If DOM focus is placed on the combobox, expand the popup.
+  [ ] -> If DOM focus is placed on another element, collapse the popup.
+
+  DOWN arrow
+  [ ] -> If DOM focus is on the combobox and the textbox is not empty and the
+         listbox is displayed moves visual focus to the first suggested value.
+  [ ] -> If DOM focus is on the combobox if the textbox is empty and the listbox
+         is not displayed, opens the listbox and moves visual focus
+         to the first option
+  [ ] -> In both previous cases DOM focus remains on the textbox
+  [ ] -> If VISUAL focus is on an option, move visual focus to the next option.
+  [ ] -> If VISUAL focus is on the last option, moves visual focus to the first
+         option.
+
+
+  UP arrow
+  [ ] -> If DOM focus is on the combobox and the textbox is not empty
+         and the listbox is displayed, moves VISUAL focus to the last suggested value
+  [ ] -> If DOM focus is on the combobox and the textbox is empty, first opens
+         the listbox if it is not already displayed and then moves VISUAL focus
+         to the last option.
+  [ ] -> In both cases DOM focus remains on the textbox.
+  [ ] -> If VISUAL focus is on an option, move visual focus to the previous option.
+  [ ] -> If VISUAL focus is on the first option, move visual focus to the last option.
+
+
+  ENTER
+  [ ] -> collapses the listbox
+  [ ] -> aria-selected is handed over to any listeners
+  [ ] -> clears the textbox
+
+  ESCAPE
+  [ ] -> collapses the listbox, DOM focus remains on the textbox
+  [ ] -> if the listbox is not displayed, clears the textbox
+
+  ON EXPANSION
+  [ ] -> the first option is made active and selected
+
+  A-Z
+  options in the listbox are filtered based on characters in the textbox
+  first option is made active and selected
+
  */
 
 const ComboboxContext = React.createContext(null);
@@ -87,9 +154,10 @@ function useCombobox(items = [], onSelect = () => {}, config = {}) {
       listRef,
       activeIndex,
       onNavigate: setActiveIndex,
+      focusItemOnOpen: false,
     }),
-    useFocus(data.context, { keyboardOnly: true }),
-    useClick(data.context, { keyboardHandlers: true }),
+    useFocus(data.context, { keyboardOnly: false }),
+    // useClick(data.context),
   ]);
 
   return React.useMemo(
@@ -194,7 +262,7 @@ function App() {
   });
 
   const { getReferenceProps, getFloatingProps, getItemProps } = useInteractions(
-    [listNavigation]
+    [listNavigation, useFocus(context, { keyboardOnly: false })]
   );
 
   const items = ["one", "two", "three"];
