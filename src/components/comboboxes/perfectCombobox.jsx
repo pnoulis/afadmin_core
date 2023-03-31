@@ -18,11 +18,6 @@ import {
   FloatingFocusManager,
 } from "@floating-ui/react";
 import Fuse from "fuse.js";
-import {
-  LoaderFailIcon,
-  LoaderSuccessIcon,
-} from "/src/components/loaders/index.js";
-import { useAsyncData } from "./useAsyncData.jsx";
 
 /*
   FULLFILLS REQUIREMENTS:
@@ -71,42 +66,13 @@ const useComboboxContext = () => {
   return ctx;
 };
 
-function useCombobox(name, getItems, onSelect) {
+function useCombobox(name, initialOptions, onSelect) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [activeIndex, setActiveIndex] = React.useState(null);
   const [inputValue, setInputValue] = React.useState("");
-  const { state, res, states, startFetching, setIdle, setLoaded } =
-    useAsyncData(getItems);
-  const [loadedItems, setLoadedItems] = React.useState([]);
   const idsRef = React.useRef(null);
   const listRef = React.useRef([]);
-  const options = React.useRef(loadedItems);
-  const Search = React.useRef(null);
-
-  React.useEffect(() => {
-    if (isOpen && loadedItems.length < 1) {
-      startFetching(() => {});
-    } else if (isOpen && loadedItems.length > 1) {
-      setLoaded();
-    } else if (!isOpen) {
-      setIdle();
-    }
-  }, [isOpen, setIsOpen]);
-
-  React.useEffect(() => {
-    if (state === states.success) {
-      setLoadedItems(res);
-      setTimeout(() => {
-        setLoaded();
-      }, 3000);
-    }
-    if (state === states.loaded) {
-      options.current = loadedItems;
-      Search.current = new Fuse(loadedItems, {
-        threshold: 0.1,
-      });
-    }
-  }, [state]);
+  const options = React.useRef(initialOptions);
 
   if (idsRef.current === null) {
     idsRef.current = {
@@ -133,6 +99,14 @@ function useCombobox(name, getItems, onSelect) {
     useClick(data.context, { keyboardHandlers: true }),
   ]);
 
+  // fuzzy search provided by https://fusejs.io/
+  const Search = React.useRef(null);
+  if (Search.current == null) {
+    Search.current = new Fuse(initialOptions, {
+      threshold: 0.1,
+    });
+  }
+
   const onInputValueChange = (e) => {
     let value;
     if (e.target) {
@@ -144,7 +118,7 @@ function useCombobox(name, getItems, onSelect) {
     setInputValue(value);
 
     if (!value) {
-      options.current = loadedItems;
+      options.current = initialOptions;
     } else {
       options.current = Search.current.search(value).map((match) => match.item);
     }
@@ -157,8 +131,6 @@ function useCombobox(name, getItems, onSelect) {
   return {
     isOpen,
     setIsOpen,
-    state,
-    states,
     name: name,
     inputValue,
     setInputValue,
@@ -173,8 +145,8 @@ function useCombobox(name, getItems, onSelect) {
   };
 }
 
-function Combobox({ name, onSelect, getItems, children, ...props }) {
-  const state = useCombobox(name, getItems, onSelect);
+function Combobox({ name, options, onSelect, children, ...props }) {
+  const state = useCombobox(name, options, onSelect);
   return (
     <ComboboxContext.Provider value={state}>
       {children}
@@ -233,7 +205,7 @@ function ComboboxList({ renderItem, className, ...props }) {
   const ctx = useComboboxContext();
   return (
     <>
-      {ctx.isOpen && ctx.state === 5 && (
+      {ctx.isOpen && (
         <ul
           id={ctx.ids.list}
           className={`combobox list ${className || ""}`}
@@ -271,22 +243,6 @@ function ComboboxList({ renderItem, className, ...props }) {
   );
 }
 
-function ComboboxFetching({ renderPending, renderSuccess, renderError }) {
-  const ctx = useComboboxContext();
-  switch (ctx.state) {
-    case 1: // pending
-    // fall through
-    case 2: // fetching
-      return <>{renderPending}</>;
-    case 3: // success
-      return <>{renderSuccess}</>;
-    case 4: // error
-      return <>{renderError}</>;
-    default: // idle or loaded
-      return <></>;
-  }
-}
-
 const ComboboxOption = React.forwardRef(
   (
     { active, selected, option, ctx, i, className, children, ...props },
@@ -300,10 +256,4 @@ const ComboboxOption = React.forwardRef(
   }
 );
 
-export {
-  Combobox,
-  ComboboxTrigger,
-  ComboboxList,
-  ComboboxOption,
-  ComboboxFetching,
-};
+export { Combobox, ComboboxTrigger, ComboboxList, ComboboxOption };

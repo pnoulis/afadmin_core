@@ -216,3 +216,62 @@ FOCUS on the reference el -> toggles ON OFF
 
 CLICK on the reference el
 while the keyboardOnly FLAG is OFF -> toggles ON OFF
+
+* Asynchronous combobox
+the options property is an asynchronous function.
+it loads the options. While the options are being fetched
+a spinner is
+
+Basically i can discern a pattern here.
+The pattern goes as follows:
+
+render a component which is responsible for displaying a resource
+that must be fetched through the network.
+
+THe component does not begin the fetch as soon as it is rendered. But
+rather when a condition is met.
+
+Some times the event which initiates the fetching of data may be fired
+multiple times and each time might provide some alternate input to the
+loader.
+
+idle
+pending
+fetched
+loaded
+
+** pattern commons
+1. data fetching does not begin until some condition is met. The condition
+   fires the data fetch event.
+2. There must be guards in place to ensure against the spamming of the data
+   fetching event. Meaning that the "fetcher" should ignore all but the last
+   data fetching event if they are fired in rapid succession.
+3. It is common that after the data have been fetched a delay period is needed
+   to process the data, after only which the component should display them.
+4. states:
+   idle
+   pending
+   fetched
+   loaded
+
+
+* How to load svg icons
+#+begin_src javascript
+  // Depends on the vite-plugin-svgr
+  // at vite.config.js:
+  import svgr from 'vite-plugin-svgr';
+  const viteConfig = defineConfig({
+    plugins: [svgr()],
+  })
+
+  import { ReactComponent as SomeIcon } from '...';
+  import { Svg } from '/src/components/svgs/index.js'
+  import styled from 'styled-components';
+
+  const StyleSomeIcon = styled(Svg)`
+  width: 50px;
+  height: 50px;
+  fill: green;
+  `
+  const Render = () => <Svg><SomeIcon/></Svg>
+#+end_src

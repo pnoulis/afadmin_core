@@ -37,3 +37,6 @@ package-lock.json
 
 # intellij
 .idea
+
+# wsl2
+*Zone.Identifier

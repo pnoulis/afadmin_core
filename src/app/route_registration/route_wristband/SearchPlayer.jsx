@@ -13,10 +13,29 @@ import {
   ComboboxTrigger,
   ComboboxList,
   ComboboxOption,
+  ComboboxFetching,
 } from "/src/components/comboboxes/sl2.jsx";
+import { FadeLoader, BounceLoader, MoonLoader } from "react-spinners";
+import { ReactComponent as SuccessIcon } from "/assets/icons/success_icon_filled.svg";
+import { ReactComponent as FailedIcon } from "/assets/icons/warning_icon_filled.svg";
+import { Svg } from "/src/components/svgs/index.js";
+import { FlashMessage } from "/src/flash_messages/index.js";
 
 const StyleSearchPlayer = styled.section`
   height: 500px;
+  display: flex;
+  flex-flow: row nowrap;
+  gap: 150px;
+`;
+
+const StyleSuccessIcon = styled(Svg)`
+  fill: var(--success-medium);
+  height: 50px;
+`;
+
+const StyleFailIcon = styled(Svg)`
+  fill: var(--error-base);
+  height: 50px;
 `;
 
 const items = ["one", "two", "three"];
@@ -94,10 +113,60 @@ const [Box, StyleTrigger, StyleList, StyleOption] = makeCombobox(
   ComboboxOption
 );
 
+const getItemsSuccess = () => {
+  return new Promise((resolve) => {
+    setTimeout(() => resolve([...items, "success"]), 3000);
+  });
+};
+
+const getItemsFailure = () => {
+  return new Promise((resolve, reject) => {
+    setTimeout(() => reject(), 3000);
+  }).catch((err) => {
+    FlashMessage.error("Failure fetching data");
+    throw err;
+  });
+};
+
 function SelectCombobox() {
   return (
-    <Box name="users" options={items} onSelect={handleSelect}>
+    <Box name="users" getItems={getItemsSuccess} onSelect={handleSelect}>
       <StyleTrigger placeholder="select a user" />
+      <ComboboxFetching
+        renderPending={<BounceLoader loading={true} color="var(--info-base)" />}
+        renderSuccess={
+          <StyleSuccessIcon>
+            <SuccessIcon />
+          </StyleSuccessIcon>
+        }
+        renderError={
+          <StyleFailIcon>
+            <FailedIcon />
+          </StyleFailIcon>
+        }
+      />
+      <StyleList renderItem={(props) => <StyleOption {...props} />} />
+    </Box>
+  );
+}
+
+function SelectComboboxFail() {
+  return (
+    <Box name="usersFail" getItems={getItemsFailure} onSelect={handleSelect}>
+      <StyleTrigger placeholder="select a user" />
+      <ComboboxFetching
+        renderPending={<BounceLoader loading={true} color="var(--info-base)" />}
+        renderSuccess={
+          <StyleSuccessIcon>
+            <SuccessIcon />
+          </StyleSuccessIcon>
+        }
+        renderError={
+          <StyleFailIcon>
+            <FailedIcon />
+          </StyleFailIcon>
+        }
+      />
       <StyleList renderItem={(props) => <StyleOption {...props} />} />
     </Box>
   );
@@ -108,7 +177,12 @@ function SearchPlayer({ className, ...props }) {
   return (
     <StyleSearchPlayer className={className} {...props}>
       search player
-      <SelectCombobox />
+      <div>
+        <SelectCombobox />
+      </div>
+      <div>
+        <SelectComboboxFail />
+      </div>
       {/* <br /> */}
       {/* <br /> */}
       {/* <br /> */}
@@ -116,6 +190,13 @@ function SearchPlayer({ className, ...props }) {
       {/* <br /> */}
       {/* <br /> */}
       {/* <App /> */}
+      {/* <BounceLoader loading={true} color="var(--info-base)" /> */}
+      {/* <StyleSuccessIcon> */}
+      {/*   <SuccessIcon /> */}
+      {/* </StyleSuccessIcon> */}
+      {/* <StyleFailIcon> */}
+      {/*   <FailedIcon /> */}
+      {/* </StyleFailIcon> */}
     </StyleSearchPlayer>
   );
 }
