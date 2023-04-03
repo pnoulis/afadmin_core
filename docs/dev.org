@@ -254,7 +254,12 @@ loaded
    fetched
    loaded
 
-
+** ComboboxFetching
+renderPending
+renderSuccess
+renderError
+** Implementation
+A request is fired
 * How to load svg icons
 #+begin_src javascript
   // Depends on the vite-plugin-svgr

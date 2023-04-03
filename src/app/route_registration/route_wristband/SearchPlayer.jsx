@@ -13,8 +13,13 @@ import {
   ComboboxTrigger,
   ComboboxList,
   ComboboxOption,
-  ComboboxFetching,
 } from "/src/components/comboboxes/sl2.jsx";
+import * as Combo from "/src/components/comboboxes/perfectCombobox.jsx";
+import {
+  RemoteDataProvider,
+  useRemoteData,
+  RemoteDataStates,
+} from "/src/hooks/useRemoteData.jsx";
 import { FadeLoader, BounceLoader, MoonLoader } from "react-spinners";
 import { ReactComponent as SuccessIcon } from "/assets/icons/success_icon_filled.svg";
 import { ReactComponent as FailedIcon } from "/assets/icons/warning_icon_filled.svg";
@@ -30,12 +35,24 @@ const StyleSearchPlayer = styled.section`
 
 const StyleSuccessIcon = styled(Svg)`
   fill: var(--success-medium);
-  height: 50px;
+  pointer-events: none;
+  height: 30px;
+  width: 30px;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(-90%, -50%);
 `;
 
 const StyleFailIcon = styled(Svg)`
   fill: var(--error-base);
-  height: 50px;
+  pointer-events: none;
+  height: 30px;
+  width: 30px;
+  position: absolute;
+  right: 0;
+  top: 50%;
+  transform: translate(-70%, -50%);
 `;
 
 const items = ["one", "two", "three"];
@@ -45,7 +62,13 @@ const handleSelect = (selected) => {
 
 function makeCombobox(Box, Trigger, List, Option) {
   const StyleTrigger = styled(Trigger)`
+    display: block;
     border: 2px solid black;
+    cursor: pointer;
+    text-align: center;
+    width: 350px;
+    height: 45px;
+    border-radius: 10px;
 
     ${({ selected, active }) => {
       if (selected) {
@@ -59,17 +82,14 @@ function makeCombobox(Box, Trigger, List, Option) {
       } else {
         return css`
           &:hover {
-            background-color: yellow;
           }
           &:focus {
-            background-color: red;
           }
         `;
       }
     }}
 
     &:active {
-      background-color: blue;
     }
   `;
 
@@ -128,75 +148,130 @@ const getItemsFailure = () => {
   });
 };
 
-function SelectCombobox() {
+const StyleSearchBar = styled.div`
+  position: absolute;
+`;
+function SelectComboboxFail() {
+  const [open, setOpen] = React.useState(false);
+  const [data, setData] = React.useState([]);
+  const remoteData = useRemoteData({
+    getRemoteData: getItemsSuccess,
+  });
+
+  React.useEffect(() => {
+    if (open && data.length < 1) {
+      remoteData
+        .startFetching()
+        .then((res) => {
+          setData(res);
+        })
+        .catch((err) => {
+          console.log("error");
+        });
+    }
+  }, [open, setOpen]);
+
+  const cssOverride = {
+    pointerEvents: "none",
+    position: "absolute",
+    right: 0,
+    top: "50%",
+    transform: "translate(-30%, -50%)",
+  };
   return (
-    <Box name="users" getItems={getItemsSuccess} onSelect={handleSelect}>
-      <StyleTrigger placeholder="select a user" />
-      <ComboboxFetching
-        renderPending={<BounceLoader loading={true} color="var(--info-base)" />}
-        renderSuccess={
-          <StyleSuccessIcon>
-            <SuccessIcon />
-          </StyleSuccessIcon>
-        }
-        renderError={
-          <StyleFailIcon>
-            <FailedIcon />
-          </StyleFailIcon>
-        }
-      />
-      <StyleList renderItem={(props) => <StyleOption {...props} />} />
-    </Box>
+    <RemoteDataProvider value={remoteData}>
+      <Box
+        name="usersFail"
+        options={data}
+        onSelect={handleSelect}
+        initialOpen={true}
+        open={open}
+        onOpenChange={setOpen}
+      >
+        <StyleSearchBar>
+          <StyleTrigger placeholder="select a user" />
+          <RemoteDataStates
+            renderPending={
+              <BounceLoader
+                loading={true}
+                color="var(--info-base)"
+                size={30}
+                cssOverride={cssOverride}
+              />
+            }
+            renderSuccess={
+              <StyleSuccessIcon>
+                <SuccessIcon />
+              </StyleSuccessIcon>
+            }
+            renderFailure={
+              <StyleFailIcon>
+                <FailedIcon />
+              </StyleFailIcon>
+            }
+          />
+        </StyleSearchBar>
+        <StyleList renderItem={(props) => <StyleOption {...props} />} />
+      </Box>
+    </RemoteDataProvider>
   );
 }
 
-function SelectComboboxFail() {
-  return (
-    <Box name="usersFail" getItems={getItemsFailure} onSelect={handleSelect}>
-      <StyleTrigger placeholder="select a user" />
-      <ComboboxFetching
-        renderPending={<BounceLoader loading={true} color="var(--info-base)" />}
-        renderSuccess={
-          <StyleSuccessIcon>
-            <SuccessIcon />
-          </StyleSuccessIcon>
-        }
-        renderError={
-          <StyleFailIcon>
-            <FailedIcon />
-          </StyleFailIcon>
-        }
-      />
-      <StyleList renderItem={(props) => <StyleOption {...props} />} />
-    </Box>
-  );
-}
+// function FetchData() {
+//   const remoteData = useRemoteData({
+//     getRemoteData: getItemsFailure,
+//     parseRes: (res) => {
+//       console.log("some sort of res");
+//       console.log(res);
+//       return res;
+//     },
+//     parseError: (err) => {
+//       console.log("there was some error");
+//       throw err;
+//     },
+//   });
+//   const fetchRef = React.useRef(0);
+//   const startFetch = () => {
+//     remoteData
+//       .startFetching(++fetchRef.current)
+//       .then((res) => console.log(`res resolved:${res}`))
+//       .catch((err) => console.log(err));
+//     // .then((res) => {
+//     //   console.log("resolved");
+//     // })
+//     // .catch((err) => {
+//     //   console.log(err);
+//     //   console.log("errorrrororororor");
+//     // });
+//   };
+//   const stopFetch = () => {
+//     remoteData.setState("idle");
+//   };
+//   return (
+//     <RemoteDataProvider value={remoteData}>
+//       <p onClick={startFetch}>start fetching</p>
+//       <p onClick={stopFetch}>stop fetch</p>
+//       <RemoteDataStates
+//         renderPending={<p>pending</p>}
+//         renderSuccess={<p>success</p>}
+//         renderFailure={<p>failure</p>}
+//       />
+//     </RemoteDataProvider>
+//   );
+// }
 
 function SearchPlayer({ className, ...props }) {
   const { afm } = useAfmContext();
   return (
     <StyleSearchPlayer className={className} {...props}>
       search player
-      <div>
-        <SelectCombobox />
-      </div>
+      {/* <FetchData /> */}
+      {/* <div> */}
+      {/*   <SelectCombobox /> */}
+      {/* </div> */}
       <div>
         <SelectComboboxFail />
       </div>
-      {/* <br /> */}
-      {/* <br /> */}
-      {/* <br /> */}
-      {/* <br /> */}
-      {/* <br /> */}
-      {/* <br /> */}
-      {/* <App /> */}
-      {/* <BounceLoader loading={true} color="var(--info-base)" /> */}
-      {/* <StyleSuccessIcon> */}
-      {/*   <SuccessIcon /> */}
-      {/* </StyleSuccessIcon> */}
-      {/* <StyleFailIcon> */}
-      {/*   <FailedIcon /> */}
-      {/* </StyleFailIcon> */}
     </StyleSearchPlayer>
   );
 }

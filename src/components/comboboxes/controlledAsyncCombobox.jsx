@@ -223,9 +223,8 @@ function ComboboxTrigger({ label, placeholder, className, ...props }) {
 
 function ComboboxList({ renderItem, className, ...props }) {
   const ctx = useComboboxContext();
-  console.log("comboboxlist being rendered");
   return (
-    <FloatingPortal>
+    <>
       {ctx.isOpen && ctx.options.length >= 1 && (
         <ul
           id={ctx.ids.list}
@@ -233,11 +232,6 @@ function ComboboxList({ renderItem, className, ...props }) {
           ref={ctx.refs.setFloating}
           role="listbox"
           aria-label={ctx.name}
-          style={{
-            position: ctx.strategy,
-            top: ctx.y ?? 0,
-            left: ctx.x ?? 0,
-          }}
           {...ctx.getFloatingProps({ ...props })}
         >
           {ctx.options.map((option, i) =>
@@ -265,7 +259,7 @@ function ComboboxList({ renderItem, className, ...props }) {
           )}
         </ul>
       )}
-    </FloatingPortal>
+    </>
   );
 }
 
