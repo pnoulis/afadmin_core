@@ -38,10 +38,6 @@ const StyleSuccessIcon = styled(Svg)`
   pointer-events: none;
   height: 30px;
   width: 30px;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translate(-90%, -50%);
 `;
 
 const StyleFailIcon = styled(Svg)`
@@ -49,10 +45,6 @@ const StyleFailIcon = styled(Svg)`
   pointer-events: none;
   height: 30px;
   width: 30px;
-  position: absolute;
-  right: 0;
-  top: 50%;
-  transform: translate(-70%, -50%);
 `;
 
 const items = ["one", "two", "three"];
@@ -149,7 +141,7 @@ const getItemsFailure = () => {
 };
 
 const StyleSearchBar = styled.div`
-  position: absolute;
+  display: flex;
 `;
 function SelectComboboxFail() {
   const [open, setOpen] = React.useState(false);

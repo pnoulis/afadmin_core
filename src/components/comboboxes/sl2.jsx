@@ -95,6 +95,16 @@ function useCombobox({
     open: isOpen,
     onOpenChange: setIsOpen,
     whileElementsMounted: autoUpdate,
+    middleware: [
+      flip(),
+      shift(),
+      offset(),
+      size({
+        apply({ rects, elements }) {
+          elements.floating.style.width = `${rects.reference.width}px`;
+        },
+      }),
+    ],
   });
 
   const interactions = useInteractions([
@@ -138,6 +148,12 @@ function useCombobox({
     data.refs.domReference.current?.focus();
     setActiveIndex(0);
   }, [initialOptions]);
+
+  React.useEffect(() => {
+    if (!isOpen && inputValue) {
+      onSelect(inputValue);
+    }
+  }, [isOpen, setIsOpen]);
 
   return {
     isOpen,
@@ -223,7 +239,6 @@ function ComboboxTrigger({ label, placeholder, className, ...props }) {
 
 function ComboboxList({ renderItem, className, ...props }) {
   const ctx = useComboboxContext();
-  console.log("comboboxlist being rendered");
   return (
     <FloatingPortal>
       {ctx.isOpen && ctx.options.length >= 1 && (
