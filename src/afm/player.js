@@ -82,6 +82,23 @@ class Player {
         .catch((err) => mixinErr("Failed player registration", err, reject));
     });
   }
+
+  /**
+   * Search a player
+   *
+   * @async
+   * @param {string} searchTerm
+   **/
+  static async search(player) {
+    return new Promise((resolve, reject) => {
+      this.afm.backend
+        .publish("/player/search", {
+          searchTerm: player,
+        })
+        .then((res) => resolve(res))
+        .catch((err) => mixinErr("Failed player search", err, reject));
+    });
+  }
 }
 
 export { playersFactory };

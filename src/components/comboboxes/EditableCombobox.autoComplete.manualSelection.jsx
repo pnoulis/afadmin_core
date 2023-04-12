@@ -1,7 +1,7 @@
 /*
-  ------------------------------ Editable Combobox ------------------------------
+  --------------------- Editable Combobox With List Autocomplete --------------------
 
-  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-none/
+  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
 
  */
 import * as React from "react";
@@ -17,6 +17,7 @@ import {
   autoUpdate,
 } from "@floating-ui/react";
 import { ComboboxCtx, useComboboxCtx } from "./Context.jsx";
+import Fuse from "fuse.js";
 
 const Provider = ({ children, ...usrConf }) => {
   const ctx = useCombobox(usrConf);
@@ -39,6 +40,15 @@ function useCombobox({
   const setIsOpen = setControlledOpen ?? setUncontrolledOpen;
   const optionsRef = React.useRef(initialOptions || []);
   const listRef = React.useRef([]);
+
+  const fuse = React.useMemo(
+    () =>
+      new Fuse(initialOptions, {
+        threshold: 0.1,
+      }),
+    [initialOptions]
+  );
+  const filter = (term) => fuse.search(term).map((match) => match.item);
 
   const data = useFloating({
     open: isOpen,
@@ -77,6 +87,12 @@ function useCombobox({
       value = e;
     }
     setInputValue(value);
+
+    if (!value) {
+      optionsRef.current = initialOptions;
+    } else {
+      optionsRef.current = filter(value);
+    }
   };
 
   return React.useMemo(
@@ -112,7 +128,7 @@ function Trigger({ placeholder, className, ...props }) {
       aria-expanded={ctx.isOpen}
       aria-haspopup="listbox"
       aria-labelledby={ctx.labelledBy}
-      aria-autocomplete="none"
+      aria-autocomplete="list"
       tabIndex={0}
       name={ctx.name}
       type="text"
@@ -230,7 +246,7 @@ const Option = React.forwardRef(
   }
 );
 
-export const EditableCombobox = {
+export const EditableListCombobox = {
   Provider,
   Trigger,
   Listbox,

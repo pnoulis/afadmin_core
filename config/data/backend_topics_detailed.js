@@ -1,5 +1,5 @@
 const BACKEND_TOPICS = [
-  // Player register
+  // -------------------------- Player register ------------------------------ //
   {
     alias: "/player/register",
     pub: {
@@ -58,9 +58,11 @@ const BACKEND_TOPICS = [
     },
   },
 
-  // Player login
+  // ------------------------------ Player login ------------------------------ //
   {
+    alias: "/player/login",
     pub: {
+      topic: "/themaze/${clientId}/gui/player/login",
       payloads: [
         {
           username: "yolo4",
@@ -69,6 +71,7 @@ const BACKEND_TOPICS = [
       ],
     },
     sub: {
+      topic: "/themaze/${clientId}/gui/player/login/response",
       payloads: [
         {
           timestamp: 1679578726601,
@@ -97,6 +100,91 @@ const BACKEND_TOPICS = [
           result: "NOK",
           message:
             'Unrecognized field "surname" (class gr.agentfactory.services.player.messages.PlayerLoginMessage), not marked as ignorable (3 known properties: "password", "timestamp", "username"])\n at [Source: (byte[])"{"username":"yolo4","surname":"yolo4","name":"yolo4","email":"yolo4@yolo4.com","password":"yolo4"}"; line: 1, column: 32] (through reference chain: gr.agentfactory.services.player.messages.PlayerLoginMessage["surname"])',
+        },
+      ],
+    },
+  },
+
+  // ------------------------------ Player Search ------------------------------ //
+  {
+    alias: "/player/search",
+    pub: {
+      topic: "themaze/${clientId}/gui/player/search",
+      payloads: [
+        {
+          timestamp: 1234234324,
+          searchTerm: "TG1",
+        },
+        {
+          timestamp: 1232456789,
+          searchTerm: "@maze.com",
+        },
+        {
+          timestamp: 123456789,
+          searchTerm: "",
+        },
+        {
+          timestamp: 12345689,
+          searchTerm: "$$$$$$$$$$$$$$",
+        },
+      ],
+    },
+    sub: {
+      topic: "/themaze/${clientId}/gui/player/search/response",
+      payloads: [
+        {
+          timestamp: 1681298866176,
+          result: "OK",
+          players: [
+            {
+              username: "TG1",
+              name: null,
+              surname: null,
+              email: "TG1@maze.com",
+              wristbandMerged: false,
+              wristband: null,
+            },
+            {
+              username: "TG10",
+              name: null,
+              surname: null,
+              email: "TG10@maze.com",
+              wristbandMerged: false,
+              wristband: null,
+            },
+          ],
+        },
+        {
+          timestamp: 1681298981576,
+          result: "OK",
+          players: [
+            {
+              username: "TG1",
+              name: null,
+              surname: null,
+              email: "TG1@maze.com",
+              wristbandMerged: false,
+              wristband: null,
+            },
+            {
+              username: "TG2",
+              name: null,
+              surname: null,
+              email: "TG2@maze.com",
+              wristbandMerged: false,
+              wristband: null,
+            },
+          ],
+        },
+        {
+          timestamp: 1681299099212,
+          result: "NOK",
+          message: "empty search term",
+        },
+        {
+          timestamp: 1681299125922,
+          result: "OK",
+          players: [],
         },
       ],
     },

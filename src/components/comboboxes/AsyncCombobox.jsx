@@ -1,52 +1,67 @@
+/*
+  ------------------ Async Combobox by List Autocomplete --------------
+
+  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
+
+  This Combobox is an extension to the combobox-autocomplete-list combobox. It restricts
+  the user from selecting a value that is not a member of the options.
+
+ */
 import * as React from "react";
 import {
   useFloating,
-  offset,
   flip,
   shift,
   size,
   useListNavigation,
-  useHover,
   useDismiss,
   useInteractions,
-  useRole,
-  useFocus,
-  useTypeahead,
   useClick,
   autoUpdate,
-  safePolygon,
-  FloatingPortal,
-  FloatingFocusManager,
 } from "@floating-ui/react";
+import { ComboboxCtx, useComboboxCtx } from "./Context.jsx";
+import Fuse from "fuse.js";
 
-const ComboboxContext = React.createContext(null);
-const useComboboxContext = () => {
-  const context = React.useContext(ComboboxContext);
-  if (context == null) {
-    throw new Error(
-      "Combobox children components must be wrapped in <Combobox/>"
-    );
-  }
-  return context;
+const Provider = ({ children, ...usrConf }) => {
+  const ctx = useCombobox(usrConf);
+  return <ComboboxCtx.Provider value={ctx}>{children}</ComboboxCtx.Provider>;
 };
 
-function useCombobox(items = [], onSelect = () => {}, config = {}) {
-  const [open, setOpen] = React.useState(false);
+function useCombobox({
+  name,
+  labelledBy = "",
+  options: getOptions,
+  onSelect = () => {},
+  onChange = () => {},
+  initialOpen = false,
+  open: controlledOpen,
+  onOpenChange: setControlledOpen,
+} = {}) {
+  const [uncontrolledOpen, setUncontrolledOpen] = React.useState(initialOpen);
   const [activeIndex, setActiveIndex] = React.useState(null);
-  const [input, setInput] = React.useState("");
+  const [inputValue, setInputValue] = React.useState("");
+  const isOpen = controlledOpen ?? uncontrolledOpen;
+  const setIsOpen = setControlledOpen ?? setUncontrolledOpen;
+  const [remoteData, setRemoteData] = React.useState([]);
+  const optionsRef = React.useRef([]);
   const listRef = React.useRef([]);
-  const contentRef = React.useRef(items);
 
-  // @floating-ui
+  const fuse = React.useMemo(
+    () =>
+      new Fuse(remoteData, {
+        threshold: 0.1,
+      }),
+    [remoteData]
+  );
+  const filter = (term) => fuse.search(term).map((match) => match.item);
+
   const data = useFloating({
-    open,
-    onOpenChange: setOpen,
-    placement: "bottom-start",
+    open: isOpen,
+    onOpenChange: setIsOpen,
     whileElementsMounted: autoUpdate,
     middleware: [
       flip(),
       shift(),
-      offset(),
       size({
         apply({ rects, elements }) {
           elements.floating.style.width = `${rects.reference.width}px`;
@@ -55,183 +70,209 @@ function useCombobox(items = [], onSelect = () => {}, config = {}) {
     ],
   });
 
-  // @floating-ui
   const interactions = useInteractions([
-    config.hover
-      ? useHover(data.context, {
-          handleClose: safePolygon({ restMs: 25 }),
-        })
-      : useClick(data.context, { keyboardHandlers: false }),
-    useRole(data.context, { role: "listbox" }),
-    useFocus(data.context, { keyboardOnly: true }),
-    useDismiss(data.context),
     useListNavigation(data.context, {
       listRef,
       activeIndex,
       onNavigate: setActiveIndex,
+      virtual: true,
       loop: true,
-      focusItemOnOpen: true,
     }),
-    useTypeahead(data.context, {
-      listRef: contentRef,
-      activeIndex,
-      onMatch: setActiveIndex,
-      resetMs: 500,
-    }),
+    useDismiss(data.context),
+    useClick(data.context, { keyboardHandlers: true }),
   ]);
 
-  const handleSelection = React.useCallback((selection) => {
-    setOpen(false);
-    setInput(selection);
-    onSelect(selection);
-  }, []);
+  const onInputValueChange = (e) => {
+    let value;
+    if (e.target) {
+      value = e.target.value;
+      setIsOpen(true);
+      setActiveIndex(null);
+    } else {
+      value = e;
+    }
+
+    setInputValue(value);
+
+    if (!value) {
+      optionsRef.current = remoteData;
+    } else {
+      optionsRef.current = filter(value);
+
+      if (optionsRef.current.length < 1) {
+        getOptions(value).then((res) => {
+          const format = res.map((p) => p.username);
+          setRemoteData(res.map((p) => p.username));
+          optionsRef.current = format;
+        });
+      }
+    }
+  };
 
   return React.useMemo(
     () => ({
-      open,
-      setOpen,
-      input,
-      items,
-      listRef: listRef.current,
-      handleSelection,
+      name,
+      labelledBy,
+      isOpen,
+      setIsOpen,
+      inputValue,
+      onSelect,
+      setInputValue,
+      onInputValueChange,
       activeIndex,
+      setActiveIndex,
+      options: optionsRef.current,
+      listRef,
       ...data,
       ...interactions,
     }),
-    [open, setOpen, interactions, data]
+    [
+      isOpen,
+      setIsOpen,
+      inputValue,
+      setInputValue,
+      interactions,
+      data,
+      remoteData,
+      setRemoteData,
+    ]
   );
 }
 
-function Combobox({ items, onSelect, children, ...config }) {
-  const state = useCombobox(items, onSelect, config);
+function Trigger({ placeholder, className, ...props }) {
+  const ctx = useComboboxCtx();
   return (
-    <ComboboxContext.Provider value={state}>
-      {children}
-    </ComboboxContext.Provider>
+    <input
+      id={`${ctx.name}-trigger`}
+      ref={ctx.refs.setReference}
+      className={`combobox trigger ${className}`}
+      role="combobox"
+      aria-controls={`${ctx.name}-listbox`}
+      aria-expanded={ctx.isOpen}
+      aria-haspopup="listbox"
+      aria-labelledby={ctx.labelledBy}
+      aria-autocomplete="list"
+      tabIndex={0}
+      name={ctx.name}
+      type="text"
+      placeholder={placeholder}
+      value={ctx.inputValue}
+      onChange={ctx.onInputValueChange}
+      {...ctx.getReferenceProps({
+        onKeyDown: (e) => {
+          switch (e.code) {
+            case "Enter":
+              if (ctx.activeIndex != null && ctx.options[ctx.activeIndex]) {
+                ctx.onInputValueChange(ctx.options[ctx.activeIndex]);
+                ctx.setActiveIndex(null);
+                ctx.setIsOpen(false);
+                ctx.onSelect(ctx.options[ctx.activeIndex]);
+              } else {
+                ctx.setActiveIndex(null);
+                ctx.setIsOpen(false);
+                ctx.onSelect(ctx.inputValue);
+              }
+              break;
+            case "Escape":
+              if (!ctx.isOpen) {
+                ctx.onInputValueChange("");
+                ctx.setActiveIndex(null);
+                ctx.refs.domReference.current?.blur();
+                ctx.onSelect("");
+              }
+              break;
+            case "Tab":
+              if (!ctx.isOpen) {
+                return;
+              }
+              if (ctx.activeIndex != null && ctx.options[ctx.activeIndex]) {
+                ctx.onInputValueChange(ctx.options[ctx.activeIndex]);
+                ctx.setActiveIndex(null);
+                ctx.setIsOpen(false);
+                ctx.refs.domReference.current?.blur();
+                ctx.onSelect(ctx.options[ctx.activeIndex]);
+              } else {
+                ctx.setActiveIndex(null);
+                ctx.setIsOpen(false);
+                ctx.refs.domReference.current?.blur();
+                ctx.onSelect(ctx.inputValue);
+              }
+            default:
+              break;
+          }
+        },
+        ...props,
+      })}
+    />
   );
 }
 
-function ComboboxTrigger({ name, placeholder, className, children, ...props }) {
-  const context = useComboboxContext();
-
-  React.useEffect(() => {
-    if (!context.open) {
-      context.refs.reference.current.blur();
-    }
-  }, [context.open]);
-
+function Listbox({ renderOption, className, ...props }) {
+  const ctx = useComboboxCtx();
+  console.log(ctx.options);
   return (
-    <div>
-      <input
-        readOnly
-        className={`combobox ${className || ""}`}
-        ref={context.refs.setReference}
-        type="text"
-        name={name}
-        id={name}
-        placeholder={placeholder}
-        value={context.input}
-        {...context.getReferenceProps(props)}
-      />
-      <label htmlFor={name}>{children}</label>
-    </div>
-  );
-}
-
-function ComboboxList({ renderItem, className, ...props }) {
-  const context = useComboboxContext();
-
-  return (
-    <FloatingPortal>
-      {context.open && (
-        <FloatingFocusManager
-          context={context.context}
-          initialFocus={0}
-          guards={false}
-          modal={false}
+    <>
+      {ctx.isOpen && (
+        <ul
+          id={`${ctx.name}-listbox`}
+          ref={ctx.refs.setFloating}
+          className={`combobox listbox ${className}`}
+          role="listbox"
+          aria-labelledby={ctx.labelledBy}
+          style={{
+            position: ctx.strategy,
+            top: ctx.y ?? 0,
+            left: ctx.x ?? 0,
+          }}
+          {...ctx.getFloatingProps(props)}
         >
-          <ul
-            className={`combobox-list ${className || ""}`}
-            ref={context.refs.setFloating}
-            role="group"
-            style={{
-              position: context.strategy,
-              top: context.y ?? 0,
-              left: context.x ?? 0,
-            }}
-            {...context.getFloatingProps({
-              onKeyDown({ code }) {
-                switch (code) {
-                  case "Enter":
-                    context.handleSelection(
-                      context.listRef[context.activeIndex].textContent
-                    );
-                    break;
-                  case "Tab":
-                    context.setOpen(false);
-                    break;
-                  default:
-                    break;
-                }
+          {ctx.options.map((opt, i) =>
+            renderOption({
+              id: `${ctx.name}-opt-${i}`,
+              key: opt,
+              label: opt,
+              i,
+              ctx,
+              ref: (node) => (ctx.listRef.current[i] = node),
+              selected: opt === ctx.inputValue,
+              active: ctx.activeIndex === i,
+              role: "option",
+              tabIndex: -1,
+              onClick: (e) => {
+                e.preventDefault();
+                ctx.onInputValueChange(opt);
+                ctx.setIsOpen(false);
+                ctx.refs.domReference.current?.focus();
+                ctx.onSelect(opt);
               },
-              onClick() {
-                context.handleSelection(
-                  context.listRef[context.activeIndex].textContent
-                );
-              },
-              ...props,
-            })}
-          >
-            {context.items.map((item, index) =>
-              renderItem({ option: item, context, index }, index)
-            )}
-          </ul>
-        </FloatingFocusManager>
+            })
+          )}
+        </ul>
       )}
-    </FloatingPortal>
+    </>
   );
 }
 
-function ComboboxOption({
-  option,
-  context,
-  index,
-  className,
-  children,
-  ...props
-}) {
-  const isActive = context.activeIndex === index;
+const Option = React.forwardRef(
+  ({ active, selected, label, ctx, className, children, ...props }, ref) => {
+    return (
+      <li
+        className={`combobox option ${className}`}
+        aria-selected={selected}
+        {...ctx.getItemProps({
+          ref,
+          ...props,
+        })}
+      >
+        {children || label}
+      </li>
+    );
+  }
+);
 
-  return (
-    <li
-      className={`combobox-option ${className || ""} ${
-        isActive ? "active" : ""
-      }`}
-      role="option"
-      id={`${index}-${option}`}
-      ref={(node) => (context.listRef[index] = node)}
-      tabIndex={isActive ? 0 : -1}
-      {...context.getItemProps(props)}
-    >
-      {children || option}
-    </li>
-  );
-}
-
-const items = ["one", "two", "three"];
-function TestAsyncCombobox() {
-  return (
-    <div>
-      <Combobox items={items}>
-        <ComboboxTrigger name="book" placeholder="select book">
-          book
-        </ComboboxTrigger>
-        <ComboboxList
-          renderItem={(props, i) => <ComboboxOption key={i} {...props} />}
-        />
-      </Combobox>
-    </div>
-  );
-}
-
-export { TestAsyncCombobox };
+export const AsyncCombobox = {
+  Provider,
+  Trigger,
+  Listbox,
+  Option,
+};

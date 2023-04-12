@@ -1,7 +1,10 @@
 /*
-  ------------------------------ Editable Combobox ------------------------------
+  ------------------ Bound Editable Combobox by List Autocomplete --------------
 
-  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-none/
+  https://www.w3.org/WAI/ARIA/apg/patterns/combobox/examples/combobox-autocomplete-list/
+
+  This Combobox is an extension to the combobox-autocomplete-list combobox. It restricts
+  the user from selecting a value that is not a member of the options.
 
  */
 import * as React from "react";
@@ -17,6 +20,7 @@ import {
   autoUpdate,
 } from "@floating-ui/react";
 import { ComboboxCtx, useComboboxCtx } from "./Context.jsx";
+import Fuse from "fuse.js";
 
 const Provider = ({ children, ...usrConf }) => {
   const ctx = useCombobox(usrConf);
@@ -39,6 +43,15 @@ function useCombobox({
   const setIsOpen = setControlledOpen ?? setUncontrolledOpen;
   const optionsRef = React.useRef(initialOptions || []);
   const listRef = React.useRef([]);
+
+  const fuse = React.useMemo(
+    () =>
+      new Fuse(initialOptions, {
+        threshold: 0.1,
+      }),
+    [initialOptions]
+  );
+  const filter = (term) => fuse.search(term).map((match) => match.item);
 
   const data = useFloating({
     open: isOpen,
@@ -72,11 +85,20 @@ function useCombobox({
     if (e.target) {
       value = e.target.value;
       setIsOpen(true);
-      setActiveIndex(null);
     } else {
       value = e;
     }
-    setInputValue(value);
+
+    if (!value) {
+      optionsRef.current = initialOptions;
+    } else {
+      optionsRef.current = filter(value);
+    }
+
+    if (optionsRef.current.length >= 1) {
+      setInputValue(value);
+      setActiveIndex(0);
+    }
   };
 
   return React.useMemo(
@@ -112,7 +134,7 @@ function Trigger({ placeholder, className, ...props }) {
       aria-expanded={ctx.isOpen}
       aria-haspopup="listbox"
       aria-labelledby={ctx.labelledBy}
-      aria-autocomplete="none"
+      aria-autocomplete="list"
       tabIndex={0}
       name={ctx.name}
       type="text"
@@ -230,7 +252,7 @@ const Option = React.forwardRef(
   }
 );
 
-export const EditableCombobox = {
+export const BoundEditableListCombobox = {
   Provider,
   Trigger,
   Listbox,

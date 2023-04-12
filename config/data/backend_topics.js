@@ -17,6 +17,12 @@ const BACKEND_TOPICS = [
     pub: "/themaze/${clientId}/gui/player/registration",
     sub: "/themaze/${clientId}/gui/player/registration/response",
   },
+  // Player search
+  {
+    alias: "/player/search",
+    pub: "/themaze/${clientId}/gui/player/search",
+    sub: "/themaze/${clientId}/gui/player/search/response",
+  },
   // Wristband scan
   {
     alias: "/wristband/scan",
