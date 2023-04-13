@@ -19,7 +19,10 @@
     "test": "make test"
   },
   "dependencies": {
+    "@emotion/styled": "^11.10.6",
     "@floating-ui/react": "^0.22.2",
+    "@mui/icons-material": "^5.11.16",
+    "@mui/material": "^5.12.0",
     "@vitejs/plugin-react": "^3.1.0",
     "afadmin_utils": "github:pnoulis/afadmin_utils#v1.0.1",
     "mqtt": "^4.3.7",

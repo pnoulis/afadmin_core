@@ -99,6 +99,22 @@ class Player {
         .catch((err) => mixinErr("Failed player search", err, reject));
     });
   }
+
+  /**
+   * List all registered players
+   *
+   * @async
+   * @returns {array<object>} players
+   * @returns {string} player.username
+   **/
+  static async list() {
+    return new Promise((resolve, reject) => {
+      this.afm.backend
+        .publish("/players/list")
+        .then((res) => resolve(res))
+        .catch((err) => mixinErr("Failed to list players", err, reject));
+    });
+  }
 }
 
 export { playersFactory };

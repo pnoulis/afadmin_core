@@ -12,7 +12,7 @@ import { ReactComponent as FailedIcon } from "/assets/icons/warning_icon_filled.
 import { Svg } from "/src/components/svgs/index.js";
 import { MoonLoader } from "react-spinners";
 import { Player } from "./Player.jsx";
-import { useWristbandRegisterCtx } from '../Context.jsx';
+import { useWristbandRegisterCtx } from "../Context.jsx";
 
 const StyleSuccessIcon = styled(Svg)`
   fill: var(--success-medium);
@@ -87,10 +87,10 @@ const StyleListbox = styled(AsyncCombobox.Listbox)`
   margin-top: 10px;
   width: 700px;
   margin-left: 138px;
-border-top-left-radius: var(--br-lg);
-border-top-right-radius: var(--br-lg);
+  border-top-left-radius: var(--br-lg);
+  border-top-right-radius: var(--br-lg);
   background-color: var(--grey-light);
-  height: 575px;
+  height: 450px;
   padding: 20px 15px;
   outline: none;
   overflow: scroll;
@@ -133,7 +133,7 @@ const StyleSearchPlayerCombobox = styled.article`
   width: 100%;
   #search-player-combobox {
     font-size: 1.5em;
-    font-family: NoirPro-SemiBold;
+    font-family: NoirPro-Regular;
     text-transform: capitalize;
     letter-spacing: 2px;
   }
@@ -159,7 +159,7 @@ function SearchPlayerCombobox() {
   const remoteData = useRemoteData({
     getRemoteData: searchPlayer,
   });
-  const {players, setPlayers} = useWristbandRegisterCtx();
+  const { players, setPlayers } = useWristbandRegisterCtx();
 
   return (
     <RemoteDataProvider value={remoteData}>
@@ -178,30 +178,33 @@ function SearchPlayerCombobox() {
               };
             }}
             onSelect={(player) => {
-              if (!players.find(p => p.username === player.username)) {
-                setPlayers([...players, {
-                  ...player,
-                  wristbandMerged: false,
-                  wristband: {
-                    status: 0,
-                    pairing: true,
-                  }
-                }]);
+              if (!players.find((p) => p.username === player.username)) {
+                setPlayers([
+                  ...players,
+                  {
+                    ...player,
+                    wristbandMerged: false,
+                    wristband: {
+                      status: 0,
+                      pairing: true,
+                    },
+                  },
+                ]);
               }
             }}
           >
             <StyleTrigger placeholder="username or email" />
-              <StyleListbox
-                renderOption={(props) => (
-                  <StyleOption {...props}>
-                    <Player
-                      player={props.option}
-                      active={props.active}
-                      selected={props.selected}
-                    />
-                  </StyleOption>
-                )}
-              />
+            <StyleListbox
+              renderOption={(props) => (
+                <StyleOption {...props}>
+                  <Player
+                    player={props.option}
+                    active={props.active}
+                    selected={props.selected}
+                  />
+                </StyleOption>
+              )}
+            />
           </Combobox>
           <div className="combobox-states">
             <RemoteDataStates

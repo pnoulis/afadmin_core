@@ -32,7 +32,7 @@ node-exec: env
 	@set -a; source ./.env && node "$${params}" | $(PRETTY_OUTPUT)
 
 .PHONY: scratch
-scratch: env-dev
+scratch: env-staging
 	set -a; source ./.env && node ./tmp/scratch.js | $(PRETTY_OUTPUT)
 
 .PHONY: run
