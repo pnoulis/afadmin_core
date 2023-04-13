@@ -128,6 +128,19 @@ function BackendServer(server, mockState, logger) {
         });
       })
   );
+
+  tr.run(
+    () =>
+      new Promise((resolve, reject) => {
+        server.subscribe("/player/search", (err) => {
+          if (err) throw err;
+          server.publish("/player/search", {
+            result: "OK",
+            players: state.players,
+          });
+        });
+      })
+  );
 }
 
 export { BackendServer };

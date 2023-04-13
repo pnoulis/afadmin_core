@@ -11,19 +11,21 @@ import { ReactComponent as SuccessIcon } from "/assets/icons/success_icon_filled
 import { ReactComponent as FailedIcon } from "/assets/icons/warning_icon_filled.svg";
 import { Svg } from "/src/components/svgs/index.js";
 import { MoonLoader } from "react-spinners";
+import { Player } from "./Player.jsx";
+import { useWristbandRegisterCtx } from '../Context.jsx';
 
 const StyleSuccessIcon = styled(Svg)`
   fill: var(--success-medium);
   pointer-events: none;
-  height: 30px;
-  width: 30px;
+  height: 40px;
+  width: 40px;
 `;
 
 const StyleFailIcon = styled(Svg)`
   fill: var(--error-base);
   pointer-events: none;
-  height: 30px;
-  width: 30px;
+  height: 40px;
+  width: 40px;
 `;
 
 const indicators = css`
@@ -56,17 +58,100 @@ const indicators = css`
 const Combobox = AsyncCombobox.Provider;
 
 const StyleTrigger = styled(AsyncCombobox.Trigger)`
-  ${indicators}
-  border: 2px solid black;
+  background-color: white;
+  border-radius: var(--br-lg);
+  height: 50px;
+
+  pointer-events: auto;
+  width: 100%;
+  height: 55px;
+  padding: 0 15px;
+  border-radius: var(--br-lg);
+  border: 2px solid var(--black-base);
+  font-size: var(--tx-md);
+  letter-spacing: 1.5px;
+  outline: none;
+  color: black;
+
+  &::placeholder {
+    color: black;
+    opacity: 1;
+  }
+
+  &:hover {
+    cursor: pointer;
+  }
 `;
 
 const StyleListbox = styled(AsyncCombobox.Listbox)`
-  border: 2px solid black;
-  margin-top: 5px;
+  margin-top: 10px;
+  width: 700px;
+  margin-left: 138px;
+border-top-left-radius: var(--br-lg);
+border-top-right-radius: var(--br-lg);
+  background-color: var(--grey-light);
+  height: 575px;
+  padding: 20px 15px;
+  outline: none;
+  overflow: scroll;
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 15px;
 `;
 
 const StyleOption = styled(AsyncCombobox.Option)`
-  ${indicators}
+  border: 4px solid transparent;
+  padding: 10px 10px;
+  border-radius: var(--br-md);
+  background-color: white;
+
+  ${({ selected, active }) => {
+    if (selected) {
+      return `
+border-color: var(--success-base);
+`;
+    } else if (active) {
+      return `
+border-color: var(--primary-medium);
+cursor: pointer;
+`;
+    } else {
+      return `
+  &:hover {
+    cursor: pointer;
+    border-color: var(--primary-medium);
+  }
+`;
+    }
+  }}
+`;
+
+const StyleSearchPlayerCombobox = styled.article`
+  display: flex;
+  flex-flow: column nowrap;
+  gap: 30px;
+  width: 100%;
+  #search-player-combobox {
+    font-size: 1.5em;
+    font-family: NoirPro-SemiBold;
+    text-transform: capitalize;
+    letter-spacing: 2px;
+  }
+
+  .combobox-wrapper {
+    display: flex;
+    flex-flow: row nowrap;
+    align-items: center;
+    gap: 10px;
+
+    #players-trigger {
+      flex: 0 0 70;
+    }
+
+    .combobox-states {
+      flex: 1 0 30%;
+    }
+  }
 `;
 
 function SearchPlayerCombobox() {
@@ -74,74 +159,69 @@ function SearchPlayerCombobox() {
   const remoteData = useRemoteData({
     getRemoteData: searchPlayer,
   });
-  const [players, setPlayers] = React.useState([]);
-
-  const handleInput = (player) => {
-    remoteData
-      .startFetching(player)
-      .then((res) => {
-        console.log(res);
-        setPlayers(res.map((p) => p.username));
-      })
-      .catch((err) => {
-        console.log(err);
-      });
-  };
-
-  React.useEffect(() => {
-    console.log(players);
-  }, [players]);
+  const {players, setPlayers} = useWristbandRegisterCtx();
 
   return (
     <RemoteDataProvider value={remoteData}>
-      <article>
-        <h1
-          id="search-player-combobox"
-          onClick={() => {
-            remoteData
-              .startFetching("@maze")
-              .then((res) => {
-                setPlayers(res.map((p) => p.username));
-              })
-              .catch((err) => {
-                console.log(err);
-              });
-          }}
-        >
-          {" "}
-          search player
-        </h1>
-        <div>
+      <StyleSearchPlayerCombobox>
+        <h1 id="search-player-combobox">search player</h1>
+        <div className="combobox-wrapper">
           <Combobox
             name="players"
             labelledBy="search-player-combobox"
             options={remoteData.startFetching}
-            onSelect={(label) => alert(label)}
+            parseOptions={(options) => {
+              const labels = options.map((opt) => opt.username);
+              return {
+                labels,
+                options,
+              };
+            }}
+            onSelect={(player) => {
+              if (!players.find(p => p.username === player.username)) {
+                setPlayers([...players, {
+                  ...player,
+                  wristbandMerged: false,
+                  wristband: {
+                    status: 0,
+                    pairing: true,
+                  }
+                }]);
+              }
+            }}
           >
-            <StyleTrigger placeholder="player" />
-            <StyleListbox
-              renderOption={(props) => <StyleOption {...props} />}
-            />
+            <StyleTrigger placeholder="username or email" />
+              <StyleListbox
+                renderOption={(props) => (
+                  <StyleOption {...props}>
+                    <Player
+                      player={props.option}
+                      active={props.active}
+                      selected={props.selected}
+                    />
+                  </StyleOption>
+                )}
+              />
           </Combobox>
+          <div className="combobox-states">
+            <RemoteDataStates
+              renderPending={
+                <MoonLoader loading color="var(--info-strong)" size={40} />
+              }
+              renderSuccess={
+                <StyleSuccessIcon>
+                  <SuccessIcon />
+                </StyleSuccessIcon>
+              }
+              renderFailure={
+                <StyleFailIcon>
+                  <FailedIcon />
+                </StyleFailIcon>
+              }
+            />
+          </div>
         </div>
-        <div>
-          <RemoteDataStates
-            renderPending={
-              <MoonLoader loading color="var(--info-base)" size={30} />
-            }
-            renderSuccess={
-              <StyleSuccessIcon>
-                <SuccessIcon />
-              </StyleSuccessIcon>
-            }
-            renderFailure={
-              <StyleFailIcon>
-                <FailedIcon />
-              </StyleFailIcon>
-            }
-          />
-        </div>
-      </article>
+      </StyleSearchPlayerCombobox>
     </RemoteDataProvider>
   );
 }

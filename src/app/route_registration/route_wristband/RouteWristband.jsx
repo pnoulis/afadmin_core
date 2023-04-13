@@ -6,12 +6,14 @@ import { PairWristband } from "./PairWristband.jsx";
 const StyleRouteWristband = styled.div`
   width: 100%;
   height: 100%;
+  margin-top: 50px;
+  padding: 0 25px;
   display: grid;
-  grid-template-columns: repeat(2, 50%);
-  grid-template-rows: 1fr;
+  grid-template-columns: 40% 60%;
+  grid-template-rows: auto;
   grid-template-areas: "search_player pair_wristband";
-  justify-items: center;
-  align-items: center;
+  justify-items: end;
+  align-items: start;
 `;
 
 const StyleSearchPlayer = styled(SearchPlayer)`
@@ -24,10 +26,10 @@ const StylePairWristband = styled(PairWristband)`
 
 function RouteWristband() {
   return (
-    <StyleRouteWristband>
-      <StyleSearchPlayer />
-      <StylePairWristband />
-    </StyleRouteWristband>
+      <StyleRouteWristband>
+        <StyleSearchPlayer />
+        <StylePairWristband />
+      </StyleRouteWristband>
   );
 }
 

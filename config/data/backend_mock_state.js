@@ -1,4 +1,5 @@
 import { BACKEND_PACKAGES } from "./backend_packages.js";
+import { BACKEND_PLAYERS } from "./backend_players.js";
 const TEAM_STATES = [
   "PENDING_PACKAGES",
   "LOADED_PACKAGES",
@@ -8,6 +9,7 @@ const TEAM_STATES = [
 ];
 
 const BACKEND_MOCK_STATE = {
+  players: BACKEND_PLAYERS,
   packages: BACKEND_PACKAGES,
   teams: [
     {

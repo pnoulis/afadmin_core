@@ -102,7 +102,7 @@ Proxy.prototype.registerClient = function registerClient(sub, options, cb) {
     mode: options.mode,
   };
   clients.push(client);
-  this.logger.trace("Registered new client", clients);
+  this.logger.debug("Registered new client", clients);
   return client;
 };
 
@@ -122,7 +122,7 @@ Proxy.prototype.unregisterClient = function unregisterClient(sub, clientId) {
     this.logger.warn(`Client: ${clientId} missing from subscription list`);
   } else {
     clients.splice(client, 1);
-    this.logger.trace(`Successfully unregistered client: ${clientId}`, clients);
+    this.logger.debug(`Successfully unregistered client: ${clientId}`, clients);
   }
 };
 
@@ -176,7 +176,7 @@ Proxy.prototype._subscribe = function _subscribe(sub) {
             );
           }
         } else {
-          this.logger.trace(`Successfully subscribed to topic: ${sub}`);
+          this.logger.debug(`Successfully subscribed to topic: ${sub}`);
         }
       });
     subscribe();
@@ -246,10 +246,10 @@ Proxy.prototype.publish = async function publish(
 Proxy.prototype._publish = function _publish(pub, payload, cb) {
   this.server.publish(pub, payload, (err) => {
     if (err) {
-      this.logger.trace(`Failed to publish to topic: ${pub}`, err);
+      this.logger.debug(`Failed to publish to topic: ${pub}`, err);
       cb(new MqttProxyError("Mqtt Broker error", err));
     } else {
-      this.logger.trace(`Successfully published to topic: ${pub}`);
+      this.logger.debug(`Successfully published to topic: ${pub}`);
       cb();
     }
   });
@@ -262,6 +262,7 @@ Proxy.prototype._publish = function _publish(pub, payload, cb) {
  * not be established
  **/
 Proxy.prototype.notifyClients = function notifyClients(sub, msg) {
+  this.logger.debug(`New message for sub:${sub}`);
   const clients = this.subscriptions.get(sub);
   if (!clients || clients.length === 0) {
     return;
@@ -281,7 +282,7 @@ Proxy.prototype.notifyClients = function notifyClients(sub, msg) {
     sub,
     clients.filter((client) => {
       client.cb(error, decoded);
-      return client.mode !== "persistent";
+      return client.mode === "persistent";
     })
   );
 };

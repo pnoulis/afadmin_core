@@ -28,10 +28,7 @@ import { SearchPlayerCombobox as SearchBox } from "./SearchBox.jsx";
 // import { FlashMessage } from "/src/flash_messages/index.js";
 
 const StyleSearchPlayer = styled.section`
-  height: 500px;
-  display: flex;
-  flex-flow: row nowrap;
-  gap: 150px;
+  width: 100%;
 `;
 
 // const StyleSuccessIcon = styled(Svg)`
@@ -254,24 +251,8 @@ const StyleSearchPlayer = styled.section`
 // }
 
 function SearchPlayer({ className, ...props }) {
-  const { searchPlayer } = useAfmContext("searchPlayer");
-
-  function handleSearchPlayer() {
-    searchPlayer("TG1")
-      .then((res) => {
-        console.log(res);
-      })
-      .catch((err) => console.log(err));
-  }
-
   return (
     <StyleSearchPlayer className={className} {...props}>
-      search player
-      {/* <FetchData /> */}
-      {/* <div> */}
-      {/*   <SelectCombobox /> */}
-      {/* </div> */}
-      <p onClick={handleSearchPlayer}>search player</p>
       <SearchBox />
     </StyleSearchPlayer>
   );

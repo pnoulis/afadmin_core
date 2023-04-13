@@ -10,7 +10,7 @@ const SvgWrapper = styled.span`
   height: ${({ size }) => size || "30px"};
   padding: 6px;
   border-radius: 50%;
-  background-color: var(--grey-1);
+  background-color: var(--grey-light);
 `;
 
 function SvgBall({ className, size, svgSize, children, ...props }) {
