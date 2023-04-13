@@ -26,7 +26,7 @@ const StyleTableHeadRow = styled(TableRow)`
   .status {
     font-family: Roboto-Bold;
     font-size: var(--tx-md);
-    color: var(--info-base);
+    color: var(--primary-light);
   }
 
   .number {
@@ -45,7 +45,7 @@ const StyleTablePlayerRow = styled(TableRow)`
   .status {
     font-family: Roboto-Bold;
     font-size: var(--tx-nl);
-    color: var(--info-base);
+    color: var(--black-base);
   }
 
   .number {
@@ -76,10 +76,33 @@ function PlayersTableHeader() {
         <TableCell>surname</TableCell>
         <TableCell>email</TableCell>
         <TableCell className="number">wristband rfid</TableCell>
+        <TableCell className="color">wristband color</TableCell>
         <TableCell className="status">status</TableCell>
       </StyleTableHeadRow>
     </TableHead>
   );
+}
+
+function mapWristbandColorCode(wristbandColorCode) {
+  if (!wristbandColorCode) return "-";
+  switch (wristbandColorCode) {
+    case 0:
+      return "black";
+    case 1:
+      return "red";
+    case 2:
+      return "purple";
+    case 3:
+      return "green";
+    case 4:
+      return "yellow";
+    case 5:
+      return "blue";
+    case 6:
+      return "orange";
+    default:
+      return "-";
+  }
 }
 
 function PlayersTable({ rows }) {
@@ -108,12 +131,22 @@ function PlayersTable({ rows }) {
                 : rows
               ).map((row) => (
                 <StyleTablePlayerRow key={row.name}>
-                  <TableCell>{row.username}</TableCell>
-                  <TableCell>{row.name}</TableCell>
-                  <TableCell>{row.surname}</TableCell>
-                  <TableCell>{row.email}</TableCell>
+                  <TableCell>{row.username || "-"}</TableCell>
+                  <TableCell>{row.name || "-"}</TableCell>
+                  <TableCell>{row.surname || "-"}</TableCell>
+                  <TableCell>{row.email || "-"}</TableCell>
                   <TableCell className="number">
-                    {row.wristband?.wristbandNumber}
+                    {row.wristband?.wristbandNumber || "-"}
+                  </TableCell>
+                  <TableCell
+                    className="number"
+                    sx={{
+                      color: mapWristbandColorCode(
+                        row.wristband?.wristbandColor
+                      ),
+                    }}
+                  >
+                    {mapWristbandColorCode(row.wristband?.wristbandColor)}
                   </TableCell>
                   <TableCell className="status">
                     {getPlayerStatus(row)}

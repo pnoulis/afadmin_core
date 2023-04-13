@@ -187,6 +187,7 @@ function SearchPlayerCombobox() {
                     wristband: {
                       status: 0,
                       pairing: true,
+                      active: false,
                     },
                   },
                 ]);

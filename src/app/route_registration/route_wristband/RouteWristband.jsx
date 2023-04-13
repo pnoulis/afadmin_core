@@ -26,10 +26,10 @@ const StylePairWristband = styled(PairWristband)`
 
 function RouteWristband() {
   return (
-      <StyleRouteWristband>
-        <StyleSearchPlayer />
-        <StylePairWristband />
-      </StyleRouteWristband>
+    <StyleRouteWristband>
+      <StyleSearchPlayer />
+      <StylePairWristband />
+    </StyleRouteWristband>
   );
 }
 

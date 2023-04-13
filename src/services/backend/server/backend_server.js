@@ -80,7 +80,9 @@ function BackendServer(server, mockState, logger) {
           } else {
             payload = {
               result: "OK",
-              ...req,
+              player: {
+                ...req,
+              },
             };
           }
           server.publish("/player/register", payload);
@@ -129,6 +131,10 @@ function BackendServer(server, mockState, logger) {
       })
   );
 
+  /**
+   * ROUTE: SEACH FOR PLAYER
+   * alias: /player/search
+   **/
   tr.run(
     () =>
       new Promise((resolve, reject) => {
@@ -141,6 +147,34 @@ function BackendServer(server, mockState, logger) {
         });
       })
   );
+
+  tr.run(
+    () =>
+      new Promise((resolve, reject) => {
+        server.subscribe("/players/list", (err) => {
+          if (err) throw err;
+          server.publish("/players/list", {
+            result: "OK",
+            players: state.players,
+          });
+        });
+      })
+  );
+
+  // /**
+  //  * ROUTE: SCAN WRISTBAND
+  //  * alias: /wristband/scan
+  //  **/
+  // tr.run(
+  //   () =>
+  //     new Promise((resolve, reject) => {
+  //       server.publish("/wristband/scan", {
+  //         result: "OK",
+  //         wristbandNumber: 32,
+  //         wristbandColor: 3,
+  //       });
+  //     })
+  // );
 }
 
 export { BackendServer };

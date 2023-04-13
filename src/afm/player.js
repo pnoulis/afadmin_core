@@ -115,6 +115,24 @@ class Player {
         .catch((err) => mixinErr("Failed to list players", err, reject));
     });
   }
+
+  /**
+   * Scan wristband
+   *
+   * @async
+   **/
+  static async scanWristband() {
+    return new Promise((resolve, reject) => {
+      this.afm.backend.subscribe(
+        "/wristband/scan",
+        { mode: "response" },
+        (err, res) => {
+          console.log(err);
+          console.log(res);
+        }
+      );
+    });
+  }
 }
 
 export { playersFactory };

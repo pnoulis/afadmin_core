@@ -30,7 +30,6 @@ function RouteHistory() {
 
   return (
     <StyleRouteHistory>
-      <h1 className="history-title">Registered players history</h1>
       <PlayersTable rows={players} />
     </StyleRouteHistory>
   );
